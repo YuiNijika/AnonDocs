@@ -54,7 +54,8 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '介绍', link: '/what-is-anon' },
-            { text: '代码与注释规范', link: '/coding-standards' }
+            { text: 'API 参考', link: '/architecture/api-reference' },
+            { text: '开发规范', link: '/coding-standards' }
           ]
         },
         {

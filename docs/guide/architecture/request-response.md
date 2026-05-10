@@ -42,6 +42,18 @@ Route::get('/test', function (Request $request) {
 });
 ```
 
+### 获取客户端 IP 地址
+
+使用 `ip` 方法可以安全地获取客户端真实的 IP 地址。该方法具有极高的鲁棒性：它不仅会自动穿透 `X-Forwarded-For` 代理层提取真实 IP，还会自动进行格式校验，并将 IPv6 的本地回环地址（`::1`）转化为标准的 IPv4 `127.0.0.1`，以防止恶意伪造。
+
+```php
+Route::get('/ip', function (Request $request) {
+    $clientIp = $request->ip(); // 例如: 192.168.1.100 或 127.0.0.1
+    
+    return ['ip' => $clientIp];
+});
+```
+
 ### 获取路由参数
 
 如果在路由定义中使用了动态参数（例如 `/user/{id}`），可以通过 `route` 方法获取：
