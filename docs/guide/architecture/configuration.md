@@ -21,15 +21,15 @@ use Anon\Core\Support\Config;
  * 框架内建了极为完善的默认配置，所有敏感信息均可通过 `.env` 环境变量配置。
  * 你可以像使用 `vite.config.ts` 一样，在这里仅写入你想要覆盖或自定义的配置项。
  * 
- * @see https://anon.docs/guide/architecture/configuration (或者查阅本地 docs/guide/architecture/configuration.md)
+ * @see https://anon.miomoe.cn/guide/architecture/configuration
  */
+
 return Config::define([
     
-    // 例如：你可以取消注释来覆盖默认的上传目录
-    // 'upload' => [
-    //     'path' => __DIR__ . '/run/storage/custom',
-    // ],
-
+    // 例如：你可以取消注释来修改默认的应用名称
+    // 'app' => [
+    //     'name' => 'Anon Framework Next'
+    // ]
 ]);
 ```
 
@@ -96,6 +96,113 @@ use Anon\Core\Facade\Config;
 
 $uploadPath = Config::get('upload.path');
 $dbName = Config::get('database.database');
+```
+
+## 完整配置项参考 (Full Reference)
+
+虽然你不需要把这些都写进 `anon.config.php`，但当你需要覆盖默认行为时，可以参考以下框架内部的完整默认配置结构：
+
+```php
+<?php
+
+use Anon\Core\Support\Config;
+
+return Config::define([
+    
+    // ----------------------------------------------------------------------
+    // 1. 基础应用配置
+    // ----------------------------------------------------------------------
+    'app' => [
+        'name'  => getenv('APP_NAME') ?: 'Anon Framework Next',
+        'env'   => getenv('APP_ENV') ?: 'production',
+        'debug' => getenv('APP_DEBUG') ?: false,
+        'url'   => getenv('APP_URL') ?: 'http://localhost',
+    ],
+
+    // ----------------------------------------------------------------------
+    // 2. 数据库配置
+    // ----------------------------------------------------------------------
+    'database' => [
+        'type'     => getenv('DATABASE_TYPE') ?: 'mysql',
+        'host'     => getenv('DATABASE_URL') ?: '127.0.0.1',
+        'port'     => (int) (getenv('DATABASE_PORT') ?: 3306),
+        'database' => getenv('DATABASE_NAME') ?: 'anon',
+        'username' => getenv('DATABASE_USER') ?: 'root',
+        'password' => getenv('DATABASE_PASSWORD') ?: '',
+        'charset'  => getenv('DATABASE_CHARSET') ?: 'utf8mb4',
+        'prefix'   => getenv('DATABASE_PREFIX') ?: '',
+    ],
+
+    // ----------------------------------------------------------------------
+    // 3. 缓存配置
+    // ----------------------------------------------------------------------
+    'cache' => [
+        'default' => getenv('CACHE_DRIVER') ?: 'file', // 可选: file, redis
+        'path'    => BASE_PATH . '/runtime/cache',
+        'prefix'  => 'anon:cache:',
+        'redis'   => [
+            'host'     => getenv('REDIS_HOST') ?: '127.0.0.1',
+            'port'     => (int) (getenv('REDIS_PORT') ?: 6379),
+            'password' => getenv('REDIS_PASSWORD') ?: '',
+            'database' => (int) (getenv('REDIS_DB') ?: 0),
+        ],
+    ],
+
+    // ----------------------------------------------------------------------
+    // 4. Session 会话配置
+    // ----------------------------------------------------------------------
+    'session' => [
+        'driver'       => getenv('SESSION_DRIVER') ?: 'file',
+        'lifetime'     => (int) (getenv('SESSION_LIFETIME') ?: 86400),
+        'path'         => '/',
+        'domain'       => getenv('SESSION_DOMAIN') ?: '',
+        'secure'       => (bool) getenv('SESSION_SECURE'),
+        'httponly'     => true,
+        'samesite'     => 'Lax',
+        'prefix'       => 'anon:session:',
+        'path_storage' => BASE_PATH . '/runtime/session',
+    ],
+
+    // ----------------------------------------------------------------------
+    // 5. JWT 认证与守卫配置
+    // ----------------------------------------------------------------------
+    'auth' => [
+        'jwt_secret'      => getenv('JWT_SECRET') ?: 'anon_secret_key',
+        'default_guard'   => 'api',
+        'refresh_enabled' => false,
+        'token_sources'   => ['header', 'cookie'], // 默认从 Header 和 Cookie 解析
+        'guards' => [
+            'api' => [
+                'secret' => getenv('JWT_SECRET') ?: 'anon_secret_key',
+                'ttl'    => 86400, // Token 有效期
+            ],
+            // 你可以自行追加 admin guard
+        ],
+    ],
+
+    // ----------------------------------------------------------------------
+    // 6. 文件上传与存储
+    // ----------------------------------------------------------------------
+    'upload' => [
+        'path' => BASE_PATH . '/run/storage',
+    ],
+
+    // ----------------------------------------------------------------------
+    // 7. 异步队列配置
+    // ----------------------------------------------------------------------
+    'queue' => [
+        'default'   => 'default',
+        'prefix'    => 'anon:queue:',
+        'max_tries' => 3,
+    ],
+
+    // ----------------------------------------------------------------------
+    // 8. 日志系统
+    // ----------------------------------------------------------------------
+    'log' => [
+        'path' => BASE_PATH . '/runtime/log',
+    ],
+]);
 ```
 
 ## 配置缓存
