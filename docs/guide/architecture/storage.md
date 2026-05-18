@@ -1,8 +1,26 @@
 # 文件存储 (Storage)
 
-Anon Framework Next 提供了统一的文件存储抽象，默认支持 `local` 本地驱动。
+Anon Framework Next 底层基于 `league/flysystem`，提供了统一的文件存储抽象。
 
-本地文件默认存储在项目的 `run/storage` 目录下。
+默认情况下，框架使用 `local` 驱动，文件存储在项目的 `runtime/storage` 目录下。
+
+## 配置
+
+推荐在 `anon.config.php` 中定义默认磁盘与本地磁盘路径：
+
+```php
+return [
+    'storage' => [
+        'default' => 'local',
+        'disks' => [
+            'local' => [
+                'root' => __DIR__ . '/runtime/storage',
+                'url' => rtrim(getenv('APP_URL') ?: 'http://127.0.0.1:8000', '/') . '/storage',
+            ],
+        ],
+    ],
+];
+```
 
 ## 基础用法
 
@@ -11,10 +29,13 @@ Anon Framework Next 提供了统一的文件存储抽象，默认支持 `local` 
 ```php
 use Anon\Core\Facade\Storage;
 
-// 写入文件 (自动创建所需目录)
+// 写入文件
 Storage::put('avatars/1.jpg', $content);
 
-// 读取文件内容
+// 追加内容
+Storage::append('logs/user.log', 'User logged in.');
+
+// 读取文件
 $content = Storage::get('avatars/1.jpg');
 
 // 判断文件是否存在
@@ -25,6 +46,10 @@ if (Storage::exists('avatars/1.jpg')) {
 // 删除文件
 Storage::delete('avatars/1.jpg');
 
-// 获取文件的公网访问 URL
+// 复制与移动文件
+Storage::copy('avatars/1.jpg', 'avatars/1_backup.jpg');
+Storage::move('avatars/1_backup.jpg', 'archive/1.jpg');
+
+// 获取文件 URL
 $url = Storage::url('avatars/1.jpg');
 ```

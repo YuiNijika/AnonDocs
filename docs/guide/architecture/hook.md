@@ -51,7 +51,9 @@ Hook::add('request_begin', function ($request) {
 
 ## 默认生命周期钩子
 
-框架在启动和运行的过程中，已经在 `Anon\Core\Foundation\App` 的关键节点埋入了以下默认钩子：
+框架在启动和运行的过程中，已经在核心架构的关键节点埋入了丰富的系统钩子，供开发者自定义扩展。
+
+### 全局生命周期 (App)
 
 | 钩子名称 | 触发时机 | 传递载荷 | 用途示例 |
 | --- | --- | --- | --- |
@@ -60,6 +62,30 @@ Hook::add('request_begin', function ($request) {
 | `request_begin` | 捕获到 Request 对象，即将进行路由分发前 | `$request` (Request实例) | 跨域预检处理、全局请求日志记录 |
 | `response_send` | 响应数据准备就绪，即将发送给客户端前 | `$response` (Response实例) | 统一注入跨域 Header、追加响应签名 |
 | `app_end` | 响应数据已经输出并结束连接后 | `$app` (App实例) | 执行不阻碍响应的后台清理、数据统计任务 |
+| `exception_render`| 捕获到异常即将输出响应时 | `['exception', 'statusCode', 'message', 'data']` | 覆盖默认的异常响应，若返回 `Response` 实例则直接发送 |
+
+### 数据库查询 (Database)
+
+| 钩子名称 | 触发时机 | 传递载荷 | 用途示例 |
+| --- | --- | --- | --- |
+| `db_query_begin` | 原生 SQL 查询执行前 | `['sql', 'bindings']` | SQL 注入防火墙过滤、打印预执行 SQL |
+| `db_query_end` | 原生 SQL 查询执行完毕后 | `['sql', 'bindings', 'time', 'result'/'affected']` | 慢查询日志记录、性能监控 |
+
+### 认证授权 (Auth)
+
+| 钩子名称 | 触发时机 | 传递载荷 | 用途示例 |
+| --- | --- | --- | --- |
+| `auth_login` | 成功签发登录 Token 及 Session 时 | `['user', 'guard', 'subject', 'session_id', 'tokens']` | 记录登录日志、同步到第三方系统 |
+| `auth_logout` | 用户注销且清除了 Session 时 | `['guard', 'payload']` | 记录登出日志 |
+
+### 异步队列 (Queue)
+
+| 钩子名称 | 触发时机 | 传递载荷 | 用途示例 |
+| --- | --- | --- | --- |
+| `queue_push` | 任务被成功推送到 Redis 队列时 | `['job', 'queue', 'delay', 'payload']` | 统计队列积压数据 |
+| `queue_job_process` | 守护进程从队列中取出任务准备执行前 | `['job', 'payload', 'attempt']` | 初始化任务运行环境（如重置数据库连接） |
+| `queue_job_success` | 守护进程成功执行完任务后 | `['job', 'payload', 'time']` | 记录任务执行耗时 |
+| `queue_job_failed` | 守护进程执行任务遭遇异常时 | `['job', 'payload', 'exception']` | 发送报警邮件、通知开发者 |
 
 ## 注册钩子行为的推荐位置
 

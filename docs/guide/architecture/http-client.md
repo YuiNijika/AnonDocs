@@ -1,6 +1,6 @@
 # HTTP 客户端
 
-Anon Framework Next 提供了一个极简且强大的 HTTP 客户端封装。底层基于 PHP 的 `cURL` 扩展，使得向其他服务器或第三方 API（如微信支付、第三方登录等）发送对外 HTTP 请求变得轻而易举。
+Anon Framework Next 提供了 HTTP 客户端封装。底层基于 PHP 的 `cURL` 扩展，使得向其他服务器或第三方 API（如微信支付、第三方登录等）发送对外 HTTP 请求变得轻而易举。
 
 你可以通过 `Anon\Core\Facade\Http` 门面来快速发起请求。
 

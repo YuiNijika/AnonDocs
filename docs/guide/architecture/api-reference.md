@@ -1,12 +1,12 @@
 # API 参考
 
-Anon Framework Next 提供了丰富且直观的内置方法（主要是通过 Facade 外观类和核心对象提供），让开发者可以快速地实现常用的业务逻辑。本章节汇总了框架中最常用的 API 与内置常量，方便在开发过程中快速查阅。
+Anon Framework Next 提供了一些内置方法（通过 Facade 外观类和核心对象提供）。本章节汇总了框架中常用的 API 与内置常量。
 
 ---
 
 ## 1. 框架内置常量
 
-框架在启动时会注册一些全局路径和环境常量，你可以直接在代码的任何地方使用它们：
+框架在启动时会注册全局路径和环境常量：
 
 | 常量名称 | 描述 | 示例值 |
 |---|---|---|
@@ -20,22 +20,26 @@ Anon Framework Next 提供了丰富且直观的内置方法（主要是通过 Fa
 
 ---
 
-## 2. 环境与配置 (Env)
+## 2. 环境与配置 (Env / Config)
 
-使用 `Anon\Core\Facade\Env` 来获取 `.env` 文件中的环境变量。
+使用 `Anon\Core\Facade\Env` 获取环境变量，使用 `Anon\Core\Facade\Config` 获取 `anon.config.php` 中的结构化配置。
 
 ```php
 use Anon\Core\Facade\Env;
+use Anon\Core\Facade\Config;
 
 // 获取环境变量，如果不存在则返回默认值 'default_value'
 $value = Env::get('KEY_NAME', 'default_value');
+
+// 获取结构化配置
+$driver = Config::get('cache.default', 'file');
 ```
 
 ---
 
 ## 3. 日志记录 (Log)
 
-使用 `Anon\Core\Facade\Log` 来记录系统日志，日志文件默认按照日期存储在 `RUNTIME_PATH/logs` 目录下。
+使用 `Anon\Core\Facade\Log` 记录日志，日志自动按天切割并隔离分类。
 
 ```php
 use Anon\Core\Facade\Log;
@@ -60,7 +64,7 @@ Log::debug('当前内存消耗: ' . memory_get_usage());
 
 ## 4. 缓存管理 (Cache)
 
-使用 `Anon\Core\Facade\Cache` 来进行数据缓存（支持文件和 Redis 驱动）。
+使用 `Anon\Core\Facade\Cache` 管理缓存。
 
 ```php
 use Anon\Core\Facade\Cache;
@@ -116,7 +120,7 @@ $sessionId = Session::getId();
 
 ## 6. 文件存储 (Storage)
 
-使用 `Anon\Core\Facade\Storage` 进行本地文件的快速存取与判断。默认存储在 `RUNTIME_PATH/storage`。
+使用 `Anon\Core\Facade\Storage` 进行文件管理。默认存储在 `RUNTIME_PATH/storage`。
 
 ```php
 use Anon\Core\Facade\Storage;
@@ -138,7 +142,7 @@ $url = Storage::url('avatars/1.png');
 
 ## 7. 身份认证 (Auth)
 
-使用 `Anon\Core\Facade\Auth` 进行无状态的 JWT 身份验证。
+使用 `Anon\Core\Facade\Auth` 进行无状态的 JWT 登录与鉴权。
 
 ```php
 use Anon\Core\Facade\Auth;
@@ -185,7 +189,7 @@ Hook::trigger('request_begin', $request);
 
 ## 9. 标准化响应 (Response)
 
-`Anon\Core\Http\Response` 提供了便捷的 JSON 格式化响应工厂方法。
+`Anon\Core\Http\Response` 统一 API 输出格式。
 
 ```php
 use Anon\Core\Http\Response;
@@ -209,7 +213,7 @@ return Response::json(['status' => 'ok'], 201);
 
 ## 10. 容器级方法 (App / Container)
 
-如果你需要手动解析服务、获取容器单例或实例化带有依赖注入的类，可以使用 `App` 容器。
+`App` 本身是一个容器单例。如果你需要手动解析服务、获取容器单例或实例化带有依赖注入的类，可以使用 `App` 容器。
 
 ```php
 use Anon\Core\Foundation\App;

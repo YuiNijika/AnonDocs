@@ -1,40 +1,48 @@
 # 环境变量 (Env)
 
-Anon Framework Next 提供了对 `.env` 文件的原生支持。环境变量是配置应用不同环境（如本地开发、测试服务器、生产环境）参数的最佳实践。
+Anon Framework Next 提供了对 `.env` 文件的原生支持。当前推荐将结构化配置写在 `anon.config.php` 中，而将 `.env` 用作敏感值和环境差异值的来源。
 
-默认情况下，项目骨架在根目录下会包含一个 `.env` 文件（或 `.env.example`）。
+默认情况下，项目骨架在根目录下会包含一个 `anon.config.php` 与 `.env`。
+
+## 分层环境文件
+
+框架现已支持类似 Vite 的分层环境文件加载方式：
+
+- `.env`
+- `.env.local`
+- `.env.development`
+- `.env.production`
+- `.env.{APP_ENV}.local`
+
+加载顺序如下：
+
+1. `.env`
+2. `.env.local`
+3. `.env.{APP_ENV}`
+4. `.env.{APP_ENV}.local`
+
+后加载的文件会覆盖前面的值；如果某个变量已经由系统环境变量、部署平台或 CLI 显式注入，则不会被 `.env*` 文件覆盖。
+
+## 推荐搭配
+
+- `anon.config.php`：推荐写成纯静态配置，包含 `app`、`cache`、`session`、`auth` 等参数，直接写入明确的字符串或布尔值。
+- `.env`：由于只用于管理敏感值，推荐仅保留 `DATABASE_` 这类连接凭证配置。框架配置中可通过 `getenv('DATABASE_PASSWORD')` 读取它。
 
 ## 基础配置
 
-典型的 `.env` 文件内容如下：
+默认骨架中的 `.env` 保持极致简洁：
 
 ```env
-# 应用配置
-APP_NAME="Anon Framework Next"
-APP_ENV=local
-DEBUG_MODE=true
-APP_URL=http://localhost:8000
-
-# 数据库配置
-# 支持的类型: mysql, pgsql, sqlite, sqlsrv, oracle
+[DATABASE]
 DATABASE_TYPE=mysql
 DATABASE_URL=127.0.0.1
 DATABASE_PORT=3306
-DATABASE_NAME=anon_test
 DATABASE_USER=root
-DATABASE_PASSWORD=root
-DATABASE_CHARSET=utf8mb4
-
-# 缓存配置
-CACHE_DRIVER=file
-
-# Session 配置
-SESSION_DRIVER=file
-SESSION_LIFETIME=86400
-
-# 身份认证配置
-JWT_SECRET=your_super_secret_key
+DATABASE_PASSWORD=
+DATABASE_NAME=anon
 ```
+
+如果项目后续需要接入更多受 `.env` 保护的敏感配置，再逐步往里加即可。
 
 ### APP_ENV 环境变量
 
@@ -84,6 +92,14 @@ if (DEBUG_MODE) {
 use Anon\Core\Facade\Env;
 // 获取 DEBUG_MODE，如果不存在则返回 false
 $isDebug = Env::get('DEBUG_MODE', false);
+```
+
+如果你需要读取结构化配置，请优先使用 `Config` 门面：
+
+```php
+use Anon\Core\Facade\Config;
+
+$cacheDriver = Config::get('cache.default', 'file');
 ```
 
 ### 数据类型自动转换

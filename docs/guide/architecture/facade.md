@@ -25,7 +25,7 @@ Facade类内部并不实现任何实际的业务逻辑，它们仅仅是通过 `
 | :--- | :--- | :--- | :--- |
 | `Anon\Core\Facade\Route` | `router` | `Anon\Core\Routing\Router` | 注册路由、路由组 |
 | `Anon\Core\Facade\DB` | `db` | `Anon\Core\Database\Connection` | 执行数据库查询构建 |
-| `Anon\Core\Facade\Log` | `log` | `Anon\Core\Log\Logger` | 记录应用日志 |
+| `Anon\Core\Facade\Log` | `log` | `Anon\Core\Log\Manager` | 记录应用日志 |
 | `Anon\Core\Facade\Env` | `env` | `Anon\Core\Support\Env` | 读取 `.env` 环境变量 |
 
 ---
@@ -47,7 +47,7 @@ $logger->info('User logged in.');
 ```php
 use Anon\Core\Facade\Log;
 
-// 优雅的调用
+// 调用
 Log::info('User logged in.');
 ```
 

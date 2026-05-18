@@ -1,6 +1,6 @@
 # 开发规范
 
-Anon Framework Next 采用现代 PHP 8.4+ 的严格类型标准，遵循 [PSR-12](https://www.php-fig.org/psr/psr-12/) 编码规范。统一的代码风格、命名规范和最佳实践，可以极大提高框架代码的质量和长期可维护性。
+Anon Framework Next 采用 PHP 8.4+ 严格类型标准，遵循 [PSR-12](https://www.php-fig.org/psr/psr-12/) 编码规范。统一的代码风格、命名规范和最佳实践，可以提高框架代码的质量和可维护性。
 
 ---
 
@@ -21,7 +21,8 @@ Anon Framework Next 采用现代 PHP 8.4+ 的严格类型标准，遵循 [PSR-12
 
 ### 目录与文件
 
-- **类库文件**：使用 `PascalCase`（大驼峰）。文件名必须与类名完全一致。例如：`Request.php`、`AuthManager.php`。
+- **类库文件**：使用 `PascalCase`（大驼峰）。文件名必须与类名完全一致。例如：`Request.php`、`Manager.php`。
+- **目录语义优先**：如果父目录已经明确表达上下文，类名应尽量保持简洁。例如优先使用 `Auth/Manager.php`、`Queue/Manager.php`，而不是 `Auth/AuthManager.php`、`Queue/QueueManager.php`。
 - **配置文件**：位于 `.env` 或小写文件。
 - **视图/模板文件**：使用 `kebab-case`（短横线）。例如：`error-500.php`。
 
@@ -39,7 +40,7 @@ interface CacheContract
     // ...
 }
 
-class RedisManager implements CacheContract 
+class Manager implements CacheContract 
 {
     // ...
 }
@@ -62,32 +63,17 @@ class RedisManager implements CacheContract
 
 ---
 
-## 3. 类型声明规范 (PHP 8+)
+## 3. 类型声明规范
 
-Anon Framework Next 强依赖 PHP 8 的类型系统，**必须**为所有可能的地方添加类型声明。
+PHP 8.4+ 提供了类型系统，我们必须充分利用。
 
-### 属性类型声明
-```php
-class User 
-{
-    protected int $id;
-    protected string $name;
-    protected ?array $metadata = null; // 允许为 null 的类型
-}
-```
-
-### 方法参数与返回值类型声明
-- 必须明确声明参数类型和返回值类型。
-- 如果方法不返回任何内容，必须声明为 `void`。
-- 善用 Union Types (联合类型) `int|string` 和 Mixed Types `mixed`。
+- **属性、参数、返回值必须声明类型。**
+- **联合类型**：使用 `|`，例如 `int|string`。
+- **可空类型**：使用 `?`，例如 `?string` (等价于 `string|null`)。
+- **混合类型**：在不确定的场景下使用 `mixed`。
 
 ```php
-public function findUser(int|string $identifier): ?User 
-{
-    // ...
-}
-
-public function handle(Request $request): void 
+public function getUserName(int $userId): ?string
 {
     // ...
 }
@@ -97,14 +83,14 @@ public function handle(Request $request): void
 
 ## 4. 注释规范
 
-代码注释是开发者交流的桥梁。我们推倡“**代码即文档**”，通过清晰的命名和类型提示减少无意义的废话注释。
+代码注释是开发者交流的桥梁。我们提倡“代码即文档”，通过清晰的命名和类型提示减少无意义的注释。
 
 ### DocBlock (文档块注释)
 
-类、属性和方法在以下情况**必须**编写 DocBlock：
-1. 方法包含复杂的业务逻辑或边界情况。
-2. 参数使用了 `mixed` 或 `array`，需要解释数组结构。
-3. 方法会抛出特定的 `Exception`。
+类、属性和方法在以下情况编写 DocBlock：
+- 方法包含复杂的业务逻辑或边界情况。
+- 参数使用了 `mixed` 或 `array`，需要解释数组结构。
+- 方法会抛出特定的 `Exception`。
 
 ```php
 /**
@@ -121,23 +107,20 @@ public function pop(?string $queue = null, int $timeout = 3): ?Job
 }
 ```
 
-### 行内注释
+### 行内注释：解释为什么 (Why)
 
-- **位置**：注释放在代码上方，与代码保持相同缩进。
-- **格式**：使用 `//` 开头，后跟**一个空格**再写文字。
-- **内容**：使用直观、简洁的中文。**解释为什么（Why）这么做，而不是在做什么（What）。**
-- **避免废话**：不要写显而易见的注释。
+行内注释用于解释“为什么这么做”，而不是“这段代码在做什么”。代码本身应该足够清晰以表达“在做什么”。
 
-#### ❌ 错误示例 (废话注释)
+#### ❌ 错误示例
 ```php
-// 检查用户名是否为空
-if ($username === null) {
-    // 抛出异常
-    throw new Exception('用户名不能为空');
+// 如果状态是 1
+if ($status === 1) {
+    // 增加计数器
+    $count++;
 }
 ```
 
-#### ✅ 正确示例 (解释为什么)
+#### ✅ 正确示例
 ```php
 // 针对 Redis 断开连接的情况，休眠 3 秒防止死循环耗尽 CPU
 catch (\Throwable $e) {
@@ -155,26 +138,83 @@ catch (\Throwable $e) {
 
 ## 5. 最佳实践与避坑指南
 
-1. **避免魔术数字 (Magic Numbers)**：代码中不应出现无意义的数字，应提取为常量。
-2. **尽早 Return (Early Return)**：减少 `if-else` 的嵌套层级，如果条件不满足，尽早抛出异常或返回。
-   
-   ```php
-   // ❌ Bad
-   public function process($user) {
-       if ($user !== null) {
-           if ($user->isActive()) {
-               // 执行核心逻辑
-           }
-       }
-   }
-   
-   // ✅ Good
-   public function process($user) {
-       if ($user === null || !$user->isActive()) {
-           return;
-       }
-       // 执行核心逻辑
-   }
-   ```
-3. **避免全局状态**：不要直接使用 `$_GET`, `$_POST`, `$_SERVER`，请使用 `$request->input()` 或 `Env::get()`。
-4. **单次职责原则 (SRP)**：一个方法最好不要超过 50 行，如果过长，请将其拆分为多个受保护的 `protected` 辅助方法。
+### 尽早 Return (Early Return)
+
+避免深层嵌套的 `if-else`。当条件不满足时，尽早抛出异常或返回，保持主逻辑在最外层。
+
+#### ❌ 错误示例
+```php
+public function updateProfile(Request $request) 
+{
+    if ($request->has('user_id')) {
+        $user = User::find($request->input('user_id'));
+        if ($user) {
+            if ($user->status === 1) {
+                // 执行更新...
+                return true;
+            } else {
+                throw new Exception('用户被禁用');
+            }
+        } else {
+            throw new Exception('用户不存在');
+        }
+    }
+}
+```
+
+#### ✅ 正确示例
+```php
+public function updateProfile(Request $request) 
+{
+    if (!$request->has('user_id')) {
+        return false;
+    }
+
+    $user = User::find($request->input('user_id'));
+    
+    if (!$user) {
+        throw new Exception('用户不存在');
+    }
+    
+    if ($user->status !== 1) {
+        throw new Exception('用户被禁用');
+    }
+    
+    // 执行更新...
+    return true;
+}
+```
+
+### 避免直接操作超全局变量
+
+永远不要在代码中直接读取 `$_GET`, `$_POST` 或 `$_FILES`。框架已经对输入进行了安全过滤和封装。
+
+- ❌ `$_GET['id']`
+- ✅ `$request->input('id')` 或 `$request->route('id')`
+
+### 魔术数字 (Magic Numbers)
+
+避免在代码中使用无意义的数字，应将其提取为有意义的常量或枚举。
+
+#### ❌ 错误示例
+```php
+if ($user->status === 2) {
+    // ...
+}
+```
+
+#### ✅ 正确示例
+```php
+class User
+{
+    public const STATUS_BANNED = 2;
+}
+
+if ($user->status === User::STATUS_BANNED) {
+    // ...
+}
+```
+
+### 单次职责原则 (SRP)
+
+一个方法应尽量保持简短。如果一个方法过长，应将其拆分为多个受保护的 `protected` 辅助方法。

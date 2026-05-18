@@ -1,22 +1,22 @@
 # 请求与响应
 
-Anon Framework Next 是一个现代化的 RESTful API 框架。底层已经完全接管了 PHP 原生的 `$_GET`, `$_POST`, `echo` 等零散操作，统一封装成了 `Request` 和 `Response` 对象。
+Anon Framework Next 是一个 RESTful API 框架。底层接管了 PHP 原生的 `$_GET`, `$_POST` 等操作，封装为 `Request` 和 `Response` 对象。
 
 ---
 
 ## Request 请求对象
 
-`Anon\Core\Http\Request` 类负责捕获当前 HTTP 请求的环境信息，并提供简洁的 API 来获取输入数据。在路由闭包或控制器方法中，你可以通过参数注入的方式获取 `$request` 实例。
+`Anon\Core\Http\Request` 类负责捕获当前 HTTP 请求的环境信息，提供获取输入数据的 API。在路由闭包或控制器方法中，可以通过参数注入的方式获取 `$request` 实例。
 
 ### 捕获输入数据
 
-使用 `$request->input()` 方法是获取前端参数的最佳实践。该方法会自动从 `GET` 参数、`POST` 表单、以及前端传递的 `application/json` Body 中提取对应字段的数据。
+使用 `$request->input()` 方法获取前端参数。该方法会自动从 `GET`、`POST` 以及 `application/json` Body 中提取数据。
 
 ```php
 use Anon\Core\Http\Request;
 
 Route::post('/user/update', function (Request $request) {
-    // 自动从查询字符串或 JSON Body 中获取 username 参数
+    // 获取 username 参数
     $username = $request->input('username');
     
     // 支持设置默认值
@@ -26,29 +26,97 @@ Route::post('/user/update', function (Request $request) {
 });
 ```
 
+#### 数据安全过滤
+
+`input()` 方法提供第三个参数 `$filter`，在获取数据的同时进行过滤与转换。
+
+支持的过滤器：`int`, `float`, `string`, `bool`, `email`, `url`, `xss`。
+
+```php
+Route::post('/comment', function (Request $request) {
+    // 转换为整型
+    $postId = $request->input('post_id', 0, 'int');
+    
+    // 转义 HTML 实体标签
+    $content = $request->input('content', '', 'xss');
+    
+    // 对整个数组递归进行 xss 过滤
+    $allSafeData = $request->input(null, null, 'xss');
+});
+```
+
 ### 获取请求基础信息
 
-你可以方便地获取请求的类型、URI 以及请求头。
+获取请求的类型、URI 以及请求头。
 
 ```php
 Route::get('/test', function (Request $request) {
-    $method = $request->method(); // 例如: GET, POST
-    $uri = $request->uri();       // 例如: /user/info
+    $method = $request->method();
+    $uri = $request->uri();
     
     // 访问原始 HTTP Header 数组
     $headers = $request->header;
     
-    return compact('method', 'uri');
+    // 获取当前站点与 URL 信息
+    $host = $request->host();         // 例如: 127.0.0.1:8000
+    $baseUrl = $request->baseUrl();   // 例如: http://127.0.0.1:8000
+    $fullUrl = $request->fullUrl();   // 例如: http://127.0.0.1:8000/test?from=docs
+    
+    return compact('method', 'uri', 'baseUrl', 'fullUrl');
 });
+```
+
+### 获取请求类型与格式
+
+```php
+Route::post('/api/data', function (Request $request) {
+    // 检查是否为指定请求方法
+    if ($request->isMethod('post')) {
+        // ...
+    }
+
+    // 判断是否是 AJAX 请求 (检查 X-Requested-With)
+    if ($request->isAjax()) {
+        // ...
+    }
+
+    // 判断当前请求提交的内容是否是 JSON 格式
+    if ($request->isJson()) {
+        // ...
+    }
+
+    // 判断客户端是否期望返回 JSON 响应 (检查 Accept 头或 AJAX)
+    if ($request->wantsJson()) {
+        // ...
+    }
+});
+```
+
+### 路径与模式匹配
+
+你可以使用 `is` 方法来验证请求的路径是否匹配给定的模式，支持 `*` 通配符。
+
+```php
+// 请求路径: /admin/users/1
+
+$request->is('admin/*'); // true
+$request->is('admin/users/*'); // true
+$request->is('api/*'); // false
+
+// 获取纯净路径 (不含 Query)
+$path = $request->path(); // "/admin/users/1"
+
+// 获取查询字符串 (Query String)
+$qs = $request->queryString(); 
 ```
 
 ### 获取客户端 IP 地址
 
-使用 `ip` 方法可以安全地获取客户端真实的 IP 地址。该方法具有极高的鲁棒性：它不仅会自动穿透 `X-Forwarded-For` 代理层提取真实 IP，还会自动进行格式校验，并将 IPv6 的本地回环地址（`::1`）转化为标准的 IPv4 `127.0.0.1`，以防止恶意伪造。
+使用 `ip` 方法获取客户端 IP 地址。该方法会提取 `X-Forwarded-For` 代理层的真实 IP，进行格式校验，并将 IPv6 本地回环地址（`::1`）转化为 IPv4 `127.0.0.1`。
 
 ```php
 Route::get('/ip', function (Request $request) {
-    $clientIp = $request->ip(); // 例如: 192.168.1.100 或 127.0.0.1
+    $clientIp = $request->ip();
     
     return ['ip' => $clientIp];
 });
@@ -56,13 +124,13 @@ Route::get('/ip', function (Request $request) {
 
 ### 获取路由参数
 
-如果在路由定义中使用了动态参数（例如 `/user/{id}`），可以通过 `route` 方法获取：
+在路由定义中使用的动态参数（如 `/user/{id}`），可以通过 `route` 方法获取：
 
 ```php
-// 获取单个路由参数
+// 获取单个参数
 $id = $request->route('id');
 
-// 获取所有路由参数
+// 获取所有参数
 $params = $request->route();
 ```
 
@@ -79,27 +147,29 @@ $token = $request->bearerToken();
 $sessionId = $request->cookie('PHPSESSID');
 ```
 
-### 获取上传的文件
+### 获取上传文件
 
-使用 `file` 方法可以获取客户端上传的文件。该方法会返回 `Anon\Core\Http\UploadedFile` 的对象实例，让你可以优雅地处理文件：
+使用 `file` 方法获取上传的文件。返回 `Anon\Core\Http\UploadedFile` 实例：
 
 ```php
-// 获取名为 'avatar' 的上传文件
+// 获取上传文件
 $file = $request->file('avatar');
 
 if ($file && $file->isValid()) {
-    // 获取文件的原始名和扩展名
     $name = $file->getClientOriginalName();
     $extension = $file->getClientOriginalExtension();
     
-    // 将文件移动到指定目录 (框架会自动处理重命名等安全问题)
-    $path = $file->move(BASE_PATH . '/run/storage/avatars');
+    // 如果不传路径，将默认保存到 anon.config.php 中的 upload.path (默认为 run/storage)
+    $path = $file->move();
+    
+    // 你也可以指定特定目录
+    // $path = $file->move(BASE_PATH . '/run/storage/avatars');
     
     echo "文件已保存至: " . $path;
 }
 ```
 
-框架还提供了一个快捷方法来检查请求中是否包含有效的文件：
+检查请求中是否包含有效文件：
 
 ```php
 if ($request->hasFile('avatar')) {
@@ -111,14 +181,13 @@ if ($request->hasFile('avatar')) {
 
 ## Response 响应对象
 
-因为我们是 API 框架，因此 `Anon\Core\Http\Response` 默认会将所有的输出内容转换为 JSON 格式，并自动附带 `Content-Type: application/json; charset=utf-8` 头信息。
+`Anon\Core\Http\Response` 默认将输出内容转换为 JSON 格式，并附带 `Content-Type: application/json; charset=utf-8`。
 
 ### 基础 JSON 输出
 
-在路由或控制器中，你**不需要**手动创建 Response 对象。只要你 `return` 了一个数组或对象，底层路由系统会自动将其转换为 Response JSON 输出。
+在路由或控制器中，直接 `return` 数组或对象，路由系统会自动转换为 Response JSON 输出。
 
 ```php
-// 直接返回数组，框架会自动帮你转换为 JSON 响应
 Route::get('/list', function () {
     return [
         ['id' => 1, 'name' => 'Alice'],
@@ -129,24 +198,24 @@ Route::get('/list', function () {
 
 ### 标准化 RESTful 响应
 
-为了统一团队的 API 输出规范，Response 类提供了 `success` 和 `error` 静态工厂方法。
+Response 类提供 `success` 和 `error` 静态工厂方法。
 
-#### 1. 成功响应
+#### 成功响应
 ```php
 use Anon\Core\Http\Response;
 
 Route::get('/user/profile', function () {
     $user = ['id' => 100, 'name' => 'Anon'];
     
-    // 默认输出: {"code":200, "message":"success", "data":{"id":100...}}
+    // 输出: {"code":200, "message":"success", "data":{"id":100...}}
     return Response::success($user);
     
-    // 也可以自定义成功消息
+    // 自定义消息
     // return Response::success($user, '获取成功');
 });
 ```
 
-#### 2. 失败/异常响应
+#### 失败/异常响应
 ```php
 use Anon\Core\Http\Response;
 
@@ -154,7 +223,7 @@ Route::post('/user/pay', function (Request $request) {
     $amount = $request->input('amount');
     
     if ($amount < 0) {
-        // 默认输出: {"code":400, "message":"金额不能为负数", "data":null}
+        // 输出: {"code":400, "message":"金额不能为负数", "data":null}
         return Response::error('金额不能为负数', 400);
     }
     
@@ -164,7 +233,7 @@ Route::post('/user/pay', function (Request $request) {
 
 ### 自定义 HTTP 状态码与头信息
 
-如果你需要手动操控 HTTP 头或非默认的状态码，可以链式调用对应的方法：
+链式调用方法设置状态码和头信息：
 
 ```php
 use Anon\Core\Http\Response;

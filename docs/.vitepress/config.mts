@@ -80,6 +80,8 @@ export default defineConfig({
             { text: '门面 (Facade)', link: '/facade' },
             { text: '事件系统 (Event)', link: '/event' },
             { text: '钩子系统 (Hook)', link: '/hook' },
+            { text: '辅助函数 (Support)', link: '/support' },
+            { text: '项目配置 (Configuration)', link: '/configuration' },
             { text: '环境变量 (Env)', link: '/env' },
             { text: '命令行控制台', link: '/console' }
           ]
@@ -105,6 +107,7 @@ export default defineConfig({
             { text: '异步任务队列 (Queue)', link: '/queue' },
             { text: '数据验证器 (Validator)', link: '/validator' },
             { text: '日志记录 (Log)', link: '/log' },
+            { text: 'Markdown 解析', link: '/markdown' },
             { text: 'Widget 小部件', link: '/widget' }
           ]
         }

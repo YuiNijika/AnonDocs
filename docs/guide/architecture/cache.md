@@ -1,10 +1,30 @@
 # 缓存系统 (Cache)
 
-Anon Framework Next 提供了统一的缓存系统接口，目前支持 `File` 和 `Redis` 两种驱动。缓存系统通过统一的 `Contract` 进行规范，保证了不同驱动之间的高度兼容性。
+Anon Framework Next 提供了统一的缓存系统接口，目前支持 `File` 和 `Redis` 两种驱动。
 
 ## 配置
 
-缓存驱动可以在 `.env` 文件中进行配置：
+推荐把缓存默认配置和 Redis 连接一起写在 `cache` 下，在 `.env*` 中存放具体连接值：
+
+```php
+return [
+    'cache' => [
+        'default' => 'file',
+        'path' => __DIR__ . '/runtime/cache',
+        'prefix' => getenv('CACHE_PREFIX') ?: 'anon:cache:',
+        'redis' => [
+            'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+            'port' => (int) (getenv('REDIS_PORT') ?: 6379),
+            'password' => getenv('REDIS_PASSWORD') ?: '',
+            'database' => (int) (getenv('REDIS_DB') ?: 0),
+        ],
+    ],
+];
+```
+
+如果你的 Session、Queue 也使用 Redis，但不想在多个地方重复写连接信息，也可以直接复用这组 `cache.redis` 配置。
+
+兼容模式下，仍可继续通过 `.env` 配置：
 
 ```env
 # 默认缓存驱动: file 或 redis
@@ -15,7 +35,7 @@ REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=
 REDIS_DB=0
-REDIS_PREFIX=anon:cache:
+CACHE_PREFIX=anon:cache:
 ```
 
 ## 基础使用
@@ -27,7 +47,7 @@ REDIS_PREFIX=anon:cache:
 ```php
 use Anon\Core\Facade\Cache;
 
-// 写入缓存，第三个参数为过期时间（秒），不传或传 null 代表永不过期
+// 写入缓存，第三个参数为过期时间（秒）
 Cache::set('user_1', ['name' => 'Anon'], 3600);
 ```
 
@@ -55,13 +75,57 @@ if (Cache::has('user_1')) {
 // 删除指定键名的缓存
 Cache::delete('user_1');
 
-// 清空当前驱动的所有缓存数据（慎用）
+// 清空当前驱动的所有缓存数据
 Cache::clear();
 ```
 
+---
+
+## 高级特性
+
+### 1. 缓存旁路 (Cache Aside)
+
+使用 `remember()` 方法，实现有缓存直接返回，无缓存则执行闭包写入缓存后返回：
+
+```php
+use Anon\Core\Facade\Cache;
+use Anon\Core\Facade\DB;
+
+// 获取用户列表，缓存 1 小时
+$users = Cache::remember('user_list', 3600, function () {
+    return DB::table('users')->where('status', 1)->get();
+});
+```
+
+### 2. 阅后即焚 (Pull)
+
+获取一个缓存值，并在获取后立即将其删除：
+
+```php
+// 获取并立即删除
+$code = Cache::pull('sms_code_13800138000', 'expired');
+```
+
+### 3. 原子增减 (Increment / Decrement)
+
+使用 `increment` 和 `decrement` 方法实现原子计数：
+
+```php
+// 浏览量 +1
+Cache::increment('article_views_100');
+
+// 浏览量 +5
+Cache::increment('article_views_100', 5);
+
+// 减少库存数量
+Cache::decrement('goods_stock_100');
+```
+
+---
+
 ## 切换驱动
 
-如果你同时配置了多种驱动，可以在运行时临时切换：
+可以在运行时临时切换驱动：
 
 ```php
 // 显式使用 redis 驱动

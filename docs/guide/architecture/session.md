@@ -1,10 +1,35 @@
-# 会话管理 (Session)
+# Session 管理
 
-Anon Framework Next 提供了对 PHP 原生 Session 的完美封装，同时支持 `file` 和 `redis` 等驱动。
+Anon Framework Next 提供了对 PHP 原生 Session 的封装，同时支持 `file` 和 `redis` 等驱动。
 
 ## 配置
 
-你可以在 `.env` 文件中配置 Session 的相关参数：
+推荐在 `anon.config.php` 中只保留 Session 自身行为配置；如果使用 Redis 驱动，连接信息可以继续放在 `cache.redis` 或 `.env*` 中：
+
+```php
+return [
+    'session' => [
+        'driver' => getenv('SESSION_DRIVER') ?: 'file',
+        'lifetime' => 86400,
+        'path' => '/',
+        'domain' => getenv('SESSION_DOMAIN') ?: '',
+        'secure' => false,
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'prefix' => getenv('SESSION_PREFIX') ?: 'anon:session:',
+        'path_storage' => __DIR__ . '/runtime/session',
+    ],
+];
+```
+
+当 `SESSION_DRIVER=redis` 时，框架会优先尝试读取：
+
+- `session.redis`
+- `cache.redis`
+- 旧的顶层 `redis`
+- 最后回退到 `.env*`
+
+兼容模式下，仍可继续只通过 `.env` 配置：
 
 ```env
 # Session 驱动 (file 或 redis)

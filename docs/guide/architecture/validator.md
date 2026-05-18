@@ -1,7 +1,6 @@
 # 数据验证器 (Validator)
 
-Anon Framework Next 提供了一个简洁、强大的数据验证器，用于验证用户提交的数据（如表单提交或 API 请求）。
-
+Anon Framework Next 提供了一个数据验证器，用于验证用户提交的数据（如表单提交或 API 请求）。
 ## 基础使用
 
 你可以通过 `Anon\Core\Facade\Validator` 门面类创建一个验证器实例。

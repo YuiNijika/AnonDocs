@@ -1,6 +1,6 @@
-# API 资源层 (API Resources)
+# API 资源转换
 
-在构建 API 时，通常需要一个转换层，将复杂的 Model 数据或数据库查询结果转换为符合特定格式的 JSON 数组。Anon Framework Next 提供了 `Json` 资源和 `Collection` 资源集合类，帮助你优雅地构建结构统一的响应。
+在构建 API 时，通常需要一个转换层，将复杂的 Model 数据或数据库查询结果转换为符合特定格式的 JSON 数组。Anon Framework Next 提供了 `Json` 资源和 `Collection` 资源集合类，帮助你构建结构统一的响应。
 
 ---
 

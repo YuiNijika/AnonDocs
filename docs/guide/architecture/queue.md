@@ -6,7 +6,26 @@
 
 ## 配置文件与依赖
 
-队列功能依赖于 `Redis`。请确保已在 `.env` 中正确配置了 Redis 的连接信息：
+队列功能依赖于 `Redis`。推荐在 `anon.config.php` 中只声明队列自身配置，Redis 连接则复用 `cache.redis` 或继续放在 `.env*` 中：
+
+```php
+return [
+    'queue' => [
+        'default' => 'default',
+        'prefix' => getenv('QUEUE_PREFIX') ?: 'anon:queue:',
+        'max_tries' => 3,
+    ],
+];
+```
+
+当你没有单独声明 `queue.redis` 时，框架会自动按以下顺序寻找 Redis 连接：
+
+- `queue.redis`
+- `cache.redis`
+- 旧的顶层 `redis`
+- `.env*`
+
+兼容模式下，仍可继续通过 `.env` 配置：
 
 ```env
 REDIS_HOST=127.0.0.1
@@ -80,12 +99,31 @@ class AuthController
         // 将发邮件任务推送到默认队列
         Queue::push(new SendWelcomeEmail($user));
 
+        // 延迟 10 秒执行，并限制最多重试 5 次
+        Queue::push(new SendWelcomeEmail($user), 'emails', 10, 5);
+
         return Response::json(['msg' => 'Registration successful!']);
     }
 }
 ```
 
 此时请求会立即返回，而任务已经序列化并持久化在 Redis 队列中。
+
+## 重试、延迟与失败队列
+
+当前队列已支持以下能力：
+
+- 延迟任务：`push($job, $queue, $delay)`
+- 最大重试次数：`push($job, $queue, $delay, $maxTries)`
+- 失败队列：超过最大重试次数后自动写入 `:failed` 队列
+- 延迟重试：worker 处理异常后会按 `--backoff` 秒数重新入队
+
+例如：
+
+```php
+// 推送到 emails 队列，延迟 30 秒执行，最多尝试 5 次
+Queue::push(new SendWelcomeEmail($user), 'emails', 30, 5);
+```
 
 ---
 
@@ -103,4 +141,37 @@ php anon queue:work
 php anon queue:work --queue=emails
 ```
 
+你也可以指定失败后的重试退避秒数：
+
+```bash
+php anon queue:work --queue=emails --backoff=5
+```
+
 > **注意：** 在生产环境中，建议使用 `Supervisor` 或 `Systemd` 来管理 `queue:work` 进程，确保它在意外退出时能自动重启。
+
+## 失败任务查看、重试与清理
+
+当任务超过最大重试次数后，会自动进入 `:failed` 队列。你可以通过以下命令查看、重新投递或清理失败任务：
+
+```bash
+# 查看默认队列最近 20 条失败任务
+php anon queue:failed
+
+# 查看指定队列
+php anon queue:failed --queue=emails --limit=50
+
+# 重试单个失败任务
+php anon queue:retry --queue=emails --id=job-id
+
+# 重试指定队列的全部失败任务
+php anon queue:retry --queue=emails --all
+
+# 清空指定队列的失败任务
+php anon queue:clear-failed --queue=emails
+```
+
+`queue:retry` 支持 `--delay=<seconds>`，用于把重试任务重新投递到延迟队列中。
+
+手动重试时，框架会将任务重新放回待消费队列，并重置本轮尝试计数，便于重新执行完整的重试流程。
+
+`queue:clear-failed` 会直接删除当前失败队列中的全部记录，适合在你确认这些失败任务已经不再需要保留时执行。

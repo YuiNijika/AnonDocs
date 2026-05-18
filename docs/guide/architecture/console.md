@@ -16,21 +16,33 @@ php anon
 
 ```bash
 $ php anon
-Anon Framework Next CLI (v1.0.0)
+Anon Framework Next Console Tool 1.0.0
+
+Usage:
+  command [options] [arguments]
 
 Available commands:
+  config:cache         Build and cache the project configuration
+  config:clear         Remove the cached project configuration
   dev                  Start the built-in PHP development server
   make:controller      Create a new controller class
   make:model           Create a new model class
   make:middleware      Create a new middleware class
+  queue:clear-failed   Clear all failed jobs from the queue
+  queue:failed         List failed jobs from the queue
+  queue:retry          Retry one or all failed jobs from the queue
+  route:cache          Build and cache the application routes
+  route:clear          Remove the cached application routes
+  run                  Start the built-in PHP server in production mode
 ```
 
 ---
 
 ## 内置命令
 
-### dev
+### dev (开发模式)
 启动 PHP 内置的高性能开发服务器，它会自动将文档根目录指向 `run/`，便于你进行本地 API 开发和调试。
+此命令会自动向环境中注入 `DEBUG_MODE=true`、`APP_DEBUG=true` 和 `APP_ENV=local`。
 
 ```bash
 php anon dev
@@ -40,18 +52,116 @@ php anon dev
 php anon dev --host=0.0.0.0 --port=8080
 ```
 
+### run (生产模式)
+启动 PHP 内置的服务器用于普通运行或生产环境，与 `dev` 命令类似，但它会自动向环境中注入 `DEBUG_MODE=false`、`APP_DEBUG=false` 和 `APP_ENV=production` 以关闭调试信息并提升性能。
+
+```bash
+php anon run
+```
+使用方法和选项与 `dev` 命令完全一致：
+```bash
+php anon run --host=0.0.0.0 --port=8080
+```
+
+### version
+你可以通过该命令快速查看当前 Anon Framework Next 的框架版本号，它会动态调用 `\Anon\Core\Facade\App::version()` 获取实际版本。
+
+```bash
+php anon version
+# 或使用缩写
+php anon -v
+php anon --version
+```
+
+### config:cache / config:clear
+用于生成和清理配置缓存文件：
+
+```bash
+php anon config:cache
+php anon config:clear
+```
+
+执行 `config:cache` 后，框架会把最终合并后的配置写入 `runtime/cache/config.php`，后续启动会优先读取该文件。
+
+### route:cache / route:clear
+用于生成和清理路由缓存文件：
+
+```bash
+php anon route:cache
+php anon route:clear
+```
+
+执行 `route:cache` 后，框架会把路由定义导出到 `runtime/cache/routes.php`。当前仅支持控制器路由缓存，闭包路由会在构建时直接报错，避免不安全的序列化行为。
+
+### queue:failed / queue:retry / queue:clear-failed
+用于查看失败任务、重新投递失败队列中的任务，以及清空失败任务：
+
+```bash
+php anon queue:failed --queue=default --limit=20
+php anon queue:retry --queue=default --id=job-id
+php anon queue:retry --queue=default --all
+php anon queue:clear-failed --queue=default
+```
+
+如果你希望重试任务延迟重新执行，可以额外传入 `--delay=5` 这类参数。
+
+### 推荐发布流程
+如果你准备在生产环境发布一个已经完成代码更新的项目，推荐按以下顺序执行：
+
+```bash
+composer install --no-dev --optimize-autoloader
+php anon config:clear
+php anon route:clear
+php anon config:cache
+php anon route:cache
+```
+
+其中：
+
+- `config:cache` 适合在配置稳定后执行
+- `route:cache` 适合在路由全部使用控制器动作后执行
+- 如果发布平台本身会注入环境变量，应先确保这些变量已就位，再生成缓存
+
 ### 生成器命令
 框架提供了一系列 `make:*` 命令来快速生成基础代码文件：
 
 ```bash
-# 生成控制器 (保存在 app/controller 目录下)
-php anon make:controller UserController
+# 生成单文件控制器
+php anon make:controller User
 
-# 生成模型 (保存在 app/model 目录下)
+# 会生成
+# app/controller/User.php
+
+# 生成目录式控制器，默认生成 Index.php
+php anon make:controller User --group
+php anon make:controller Admin/User --group
+
+# 会生成
+# app/controller/User/Index.php
+# app/controller/Admin/User/Index.php
+
+# 生成资源控制器模板
+php anon make:controller User --resource
+php anon make:controller Admin/User --group --resource
+
+# 会生成 index/show/store/update/delete 五个常用动作
+# 适合直接配合 Route::resource() 使用
+
+# 生成模型
 php anon make:model User
+php anon make:model Admin/User
 
-# 生成中间件 (保存在 app/middleware 目录下)
+# 会生成
+# app/model/User.php
+# app/model/Admin/User.php
+
+# 生成中间件
 php anon make:middleware AuthMiddleware
+php anon make:middleware Admin/CheckLogin
+
+# 会生成
+# app/middleware/AuthMiddleware.php
+# app/middleware/Admin/CheckLogin.php
 ```
 
 ---
