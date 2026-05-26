@@ -1,12 +1,14 @@
 # API 资源转换
 
-在构建 API 时，通常需要一个转换层，将复杂的 Model 数据或数据库查询结果转换为符合特定格式的 JSON 数组。Anon Framework Next 提供了 `Json` 资源和 `Collection` 资源集合类，帮助你构建结构统一的响应。
+接口返回数据时，最怕控制器里到处都是 `unset password`、`date()`、字段改名、分页拼装。写多了以后，响应结构会变得很散。
+
+Resource 的作用就是把“业务数据长什么样”和“接口要返回什么样”分开。控制器负责拿数据，Resource 负责整理输出。
 
 ---
 
-## 创建资源类
+## 写一个资源类
 
-你可以继承 `Anon\Core\Http\Resource\Json` 类来创建你自己的资源类。
+继承 `Anon\Core\Http\Resource\Json`，然后在 `toArray()` 里描述最终要给前端的字段。
 
 ```php
 namespace App\Http\Resources;
@@ -16,29 +18,25 @@ use Anon\Core\Http\Request;
 
 class UserResource extends Json
 {
-    /**
-     * 将资源转换成数组
-     */
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'name'       => $this->name,
-            'email'      => $this->email,
-            // 隐藏 password
-            'created_at' => date('Y-m-d H:i:s', $this->created_at),
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'created_at' => $this->created_at,
         ];
     }
 }
 ```
 
-> **注意：** 在 `toArray` 方法中，你可以直接通过 `$this->属性名` 访问基础 Model 上的属性。
+`$this->id` 这类写法会从传进来的资源里取值。资源可以是对象，也可以是数组。
 
 ---
 
-## 响应单个资源
+## 返回单个资源
 
-在控制器中，你可以使用 `make` 方法实例化资源并直接返回，框架的路由会自动将其解析为 JSON 响应。
+控制器里不用关心响应细节，直接返回 Resource 即可。
 
 ```php
 namespace App\Controller;
@@ -51,17 +49,39 @@ class UserController
     public function show($id)
     {
         $user = User::find($id);
-        
-        return UserResource::make($user);
+
+        return UserResource::make($user)
+            ->meta(['loaded_at' => time()])
+            ->links(['self' => '/users/' . $id]);
     }
+}
+```
+
+最终会进入统一响应结构：
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": {
+    "id": 1,
+    "name": "Anon"
+  },
+  "meta": {
+    "loaded_at": 1710000000
+  },
+  "links": {
+    "self": "/users/1"
+  }
 }
 ```
 
 ---
 
-## 响应资源集合
+## 返回列表
 
-如果你要返回多条记录（例如列表页），可以使用 `collection` 静态方法。
+列表接口用 `collection()`。
 
 ```php
 namespace App\Controller;
@@ -74,8 +94,124 @@ class UserController
     public function index()
     {
         $users = User::all();
-        
-        return UserResource::collection($users);
+
+        return UserResource::collection($users)
+            ->meta(['source' => 'users'])
+            ->links(['self' => '/users']);
     }
 }
+```
+
+集合里的每一项都会用 `UserResource` 转换，最后放进响应的 `data`。
+
+---
+
+## 分页列表
+
+推荐优先使用框架提供的 `Paginator`，这样分页信息会稳定放到 `meta.pagination`，分页链接会放到 `links`。
+
+```php
+use Anon\Core\Pagination\Paginator;
+
+$paginator = Paginator::make(
+    items: $users,
+    total: 120,
+    page: 1,
+    perPage: 15,
+    path: '/users'
+);
+
+return UserResource::collection($paginator);
+```
+
+输出大概是这样：
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": [],
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "per_page": 15,
+      "total": 120,
+      "last_page": 8,
+      "from": 1,
+      "to": 15
+    }
+  },
+  "links": {
+    "first": "/users?page=1&per_page=15",
+    "last": "/users?page=8&per_page=15",
+    "prev": null,
+    "next": "/users?page=2&per_page=15"
+  }
+}
+```
+
+如果你已经有自己的分页数组或分页对象，`Collection` 也会尽量识别常见字段，并自动整理到 `meta` 和 `links`。
+
+能识别的数据列表字段：
+
+- `data`
+- `items`
+- `records`
+
+能识别的分页信息：
+
+- `current_page`
+- `page`
+- `per_page`
+- `limit`
+- `total`
+- `last_page`
+- `from`
+- `to`
+
+能识别的分页链接：
+
+- `first_page_url`
+- `last_page_url`
+- `prev_page_url`
+- `next_page_url`
+
+```php
+return UserResource::collection([
+    'data' => $users,
+    'current_page' => 1,
+    'per_page' => 15,
+    'total' => 120,
+    'last_page' => 8,
+    'next_page_url' => '/users?page=2',
+]);
+```
+
+输出大概是这样：
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": [],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 120,
+    "last_page": 8
+  },
+  "links": {
+    "next": "/users?page=2"
+  }
+}
+```
+
+如果你的分页结构比较特殊，也可以手动补：
+
+```php
+return UserResource::collection($users)
+    ->meta(['total' => $total, 'page' => $page])
+    ->links(['next' => $nextUrl]);
 ```

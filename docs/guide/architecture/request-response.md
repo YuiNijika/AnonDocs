@@ -181,11 +181,11 @@ if ($request->hasFile('avatar')) {
 
 ## Response 响应对象
 
-`Anon\Core\Http\Response` 默认将输出内容转换为 JSON 格式，并附带 `Content-Type: application/json; charset=utf-8`。
+`Response` 负责把接口结果送回客户端。默认会按 JSON 输出，并自动带上 `Content-Type: application/json; charset=utf-8`。
 
-### 基础 JSON 输出
+### 直接返回数组或对象
 
-在路由或控制器中，直接 `return` 数组或对象，路由系统会自动转换为 Response JSON 输出。
+控制器或路由里直接返回数组、对象也可以，路由器会帮你包成成功响应。
 
 ```php
 Route::get('/list', function () {
@@ -196,9 +196,9 @@ Route::get('/list', function () {
 });
 ```
 
-### 标准化 RESTful 响应
+### 推荐的标准响应
 
-Response 类提供 `success` 和 `error` 静态工厂方法。
+多数 API 建议直接用 `Response::success()` 和 `Response::error()`。这样前端拿到的结构会一直稳定。
 
 #### 成功响应
 ```php
@@ -206,29 +206,67 @@ use Anon\Core\Http\Response;
 
 Route::get('/user/profile', function () {
     $user = ['id' => 100, 'name' => 'Anon'];
-    
-    // 输出: {"code":200, "message":"success", "data":{"id":100...}}
+
     return Response::success($user);
-    
-    // 自定义消息
-    // return Response::success($user, '获取成功');
 });
 ```
 
-#### 失败/异常响应
+返回结构大概是：
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": {
+    "id": 100,
+    "name": "Anon"
+  }
+}
+```
+
+如果这个接口有更明确的业务语义，也可以自己给消息、状态码和业务码：
+
+```php
+return Response::success($user, 'Created', 201, 'USER_CREATED');
+```
+
+#### 失败响应
 ```php
 use Anon\Core\Http\Response;
 
 Route::post('/user/pay', function (Request $request) {
     $amount = $request->input('amount');
-    
+
     if ($amount < 0) {
-        // 输出: {"code":400, "message":"金额不能为负数", "data":null}
-        return Response::error('金额不能为负数', 400);
+        return Response::error('金额不能为负数', 400, ['amount' => ['金额不能为负数']], 'BAD_REQUEST');
     }
-    
+
     return Response::success(null, '支付成功');
 });
+```
+
+返回结构大概是：
+
+```json
+{
+  "success": false,
+  "code": "BAD_REQUEST",
+  "message": "金额不能为负数",
+  "errors": {
+    "amount": ["金额不能为负数"]
+  }
+}
+```
+
+框架抛出的常见异常也会走同一套结构，比如 `UNAUTHORIZED`、`FORBIDDEN`、`NOT_FOUND`、`VALIDATION_FAILED`、`TOO_MANY_REQUESTS`、`INTERNAL_ERROR`。异常响应里会带 `trace_id`，方便前端报错时和服务端日志对上。
+
+### 原始 JSON 输出
+
+如果某个接口就是想原样输出，不需要标准 envelope，可以显式使用 `Response::json()`。
+
+```php
+return Response::json(['status' => 'ok'], 201);
 ```
 
 ### 自定义 HTTP 状态码与头信息

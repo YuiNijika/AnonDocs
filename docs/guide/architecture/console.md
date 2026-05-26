@@ -162,7 +162,49 @@ php anon make:middleware Admin/CheckLogin
 # 会生成
 # app/middleware/AuthMiddleware.php
 # app/middleware/Admin/CheckLogin.php
+
+# 生成 Server Action
+php anon make:action PublishPost
+php anon make:action Admin/RetryJob
+
+# 会生成
+# app/action/PublishPost.php
+# app/action/Admin/RetryJob.php
+
+# 生成 FormRequest
+php anon make:request PublishPostRequest
+
+# 会生成
+# app/Http/Requests/PublishPostRequest.php
+
+# 生成 API Resource
+php anon make:resource PostResource
+
+# 会生成
+# app/Http/Resources/PostResource.php
+
+# 生成服务提供者
+php anon make:provider AppServiceProvider
+
+# 会生成
+# app/provider/AppServiceProvider.php
 ```
+
+### Server Actions 列表
+
+注册的 Server Actions 可以直接列出来，调试时很省事：
+
+```bash
+php anon action:list
+```
+
+如果要给脚本或后续客户端生成器使用，可以输出 JSON：
+
+```bash
+php anon action:list --json
+```
+
+输出内容来自当前应用真实加载后的 Action 注册表，所以执行前要确保路由文件会被正常加载。
 
 ---
 

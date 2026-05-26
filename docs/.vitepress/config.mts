@@ -66,7 +66,9 @@ export default defineConfig({
             { text: '路由系统', link: '/router' },
             { text: '请求与响应', link: '/request-response' },
             { text: '表单验证请求 (Form Request)', link: '/form-request' },
+            { text: 'Server Actions', link: '/server-actions' },
             { text: 'API 资源层 (Resources)', link: '/api-resource' },
+            { text: 'OpenAPI 生成', link: '/openapi' },
             { text: '中间件 (Middleware)', link: '/middleware' },
             { text: 'HTTP 客户端', link: '/http-client' }
           ]
@@ -77,6 +79,7 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '依赖注入容器', link: '/container' },
+            { text: '服务提供者', link: '/service-provider' },
             { text: '门面 (Facade)', link: '/facade' },
             { text: '事件系统 (Event)', link: '/event' },
             { text: '钩子系统 (Hook)', link: '/hook' },

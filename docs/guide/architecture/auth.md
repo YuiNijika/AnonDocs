@@ -515,7 +515,7 @@ $apiToken = JWTUtil::encode($payload, $apiSecret);
 ```php
 use Anon\Core\Auth\JWTUtil;
 use Anon\Core\Facade\Env;
-use Anon\Core\Exception\HttpException;
+use Anon\Core\Exception\Http;
 use Anon\Core\Http\Request;
 
 class ApiAuthMiddleware
@@ -533,7 +533,7 @@ class ApiAuthMiddleware
             $request->apiClient = $payload;
             
         } catch (\Exception $e) {
-            throw new HttpException(401, 'Invalid API Token');
+            throw new Http(401, 'Invalid API Token');
         }
 
         return $next($request);

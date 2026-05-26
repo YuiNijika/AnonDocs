@@ -259,6 +259,78 @@ class ArticleController
 }
 ```
 
+### API 版本分组
+
+如果接口需要版本化，可以用 `version()` 做一层语义更清楚的分组：
+
+```php
+use Anon\Core\Facade\Route;
+use Anon\Controller\Api\UserController;
+
+Route::version('v1')->group(function () {
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+});
+```
+
+实际注册出来的路径是：
+
+```http
+GET /api/v1/users
+GET /api/v1/users/{id}
+```
+
+如果你的 API 前缀不是 `/api`，可以传第二个参数：
+
+```php
+Route::version('v2', '/open')->group(function () {
+    Route::get('/users', [UserController::class, 'index']);
+});
+```
+
+对应路径是：
+
+```http
+GET /open/v2/users
+```
+
+### 路由参数绑定
+
+简单参数继续用字符串就够了。如果你希望在进入控制器前先把参数解析成业务对象，可以显式绑定：
+
+```php
+Route::bind('user', function ($value) {
+    return User::find($value);
+});
+
+Route::get('/users/{user}', [UserController::class, 'show']);
+```
+
+控制器里参数名保持一致即可拿到绑定结果：
+
+```php
+class UserController
+{
+    public function show($user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+        ];
+    }
+}
+```
+
+如果模型类有 `find()`、`findBy()` 或 `where()->first()` 这类入口，也可以用更短的模型绑定：
+
+```php
+Route::model('user', User::class);
+Route::get('/users/{user}', [UserController::class, 'show']);
+```
+
+当绑定结果为空时，框架会返回统一的 `NOT_FOUND`。如果控制器参数同时带了类型，并且路由绑定结果就是这个类型，框架会优先把绑定结果注入进去。
+
+
 ---
 
 ## 路由组 (Route Groups)
@@ -327,15 +399,69 @@ Route::group(['prefix' => '/admin', 'middleware' => AuthMiddleware::class], func
 
 ---
 
-## 路由列表可视化
+## 路由元信息
 
-你可以通过自带的命令行工具随时查看项目中所有已注册的路由。这对调试非常方便：
+如果后面要生成 OpenAPI，或者只是想让路由列表更容易看懂，可以给路由补一些元信息。
+
+```php
+Route::get('/users/{id}', [UserController::class, 'show'])
+    ->name('users.show')
+    ->summary('获取用户详情')
+    ->description('根据用户 ID 返回用户基础资料')
+    ->tags(['Users'])
+    ->openapi([
+        'responses' => [
+            '200' => ['description' => 'User detail'],
+            '404' => ['description' => 'User not found'],
+        ],
+    ]);
+```
+
+常用的就这几个：
+
+- `name()`：路由名，也会作为默认 `operationId`
+- `summary()`：一句话说明接口用途
+- `description()`：更详细的接口说明
+- `tags()`：接口分组
+- `openapi()`：直接追加 OpenAPI operation 配置
+
+这些信息会跟着路由缓存一起保存，不需要每次启动重新计算。
+
+---
+
+## OpenAPI 生成
+
+路由注册好以后，可以直接生成 OpenAPI JSON：
+
+```bash
+php anon openapi:generate
+```
+
+默认生成到：
+
+```text
+runtime/openapi.json
+```
+
+也可以指定输出路径：
+
+```bash
+php anon openapi:generate --output=runtime/docs/openapi.json
+```
+
+目前会生成路径、HTTP 方法、路径参数、`operationId`、`summary`、`description`、`tags` 和基础响应声明。更细的 schema 可以通过 `openapi()` 自己补。
+
+---
+
+## 路由列表
+
+想确认当前项目到底注册了哪些路由，直接跑：
 
 ```bash
 php anon route:list
 ```
 
-该命令会以表格形式直观地打印出：`Method`（请求方法）、`URI`（路径）、`Action`（控制器或闭包）和 `Middleware`（绑定的中间件）。
+输出会列出 `Method`、`URI`、`Action` 和 `Middleware`，排查路由没命中、控制器写错、中间件没挂上时很有用。
 
 ---
 
