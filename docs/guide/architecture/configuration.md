@@ -167,13 +167,11 @@ return Config::define([
     // 5. JWT 认证与守卫配置
     // ----------------------------------------------------------------------
     'auth' => [
-        'jwt_secret'      => getenv('JWT_SECRET') ?: 'anon_secret_key',
         'default_guard'   => 'api',
         'refresh_enabled' => false,
         'token_sources'   => ['header', 'cookie'], // 默认从 Header 和 Cookie 解析
         'guards' => [
             'api' => [
-                'secret' => getenv('JWT_SECRET') ?: 'anon_secret_key',
                 'ttl'    => 86400, // Token 有效期
             ],
             // 你可以自行追加 admin guard
@@ -209,6 +207,13 @@ return Config::define([
     'server' => [
         'host' => '127.0.0.1',
         'port' => 8000,
+    ],
+
+    // ----------------------------------------------------------------------
+    // 10. HTTP 客户端配置
+    // ----------------------------------------------------------------------
+    'http' => [
+        'ssl_verify' => true,
     ],
 ]);
 ```
