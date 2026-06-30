@@ -12,7 +12,7 @@
 ## 写一个服务提供者
 
 ```php
-namespace App\Providers;
+namespace Anon\Provider;
 
 use Anon\Core\Foundation\ServiceProvider;
 use Anon\Core\Facade\Route;
@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::aliasMiddleware('admin', \App\Middleware\AdminOnly::class);
+        Route::aliasMiddleware('admin', \Anon\Middleware\AdminOnly::class);
     }
 }
 ```
@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
 return Config::define([
     'app' => [
         'providers' => [
-            App\Providers\AppServiceProvider::class,
+            Anon\Provider\AppServiceProvider::class,
         ],
     ],
 ]);
@@ -56,11 +56,13 @@ return Config::define([
 
 ```php
 'providers' => [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\AuthServiceProvider::class,
-    App\Providers\AdminServiceProvider::class,
+    Anon\Provider\AppServiceProvider::class,
+    Anon\Provider\AuthServiceProvider::class,
+    Anon\Provider\AdminServiceProvider::class,
 ]
 ```
+
+如果你的项目骨架使用的是 `app/Provider`，那命名空间也应同步保持为 `Anon\Provider` 这类与目录大小写一致的形式，不要混用旧的 `App\Providers` 示例。
 
 ---
 

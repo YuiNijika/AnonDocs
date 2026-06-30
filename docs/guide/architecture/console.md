@@ -130,15 +130,15 @@ php anon route:cache
 php anon make:controller User
 
 # 会生成
-# app/controller/User.php
+# app/Controller/User.php
 
 # 生成目录式控制器，默认生成 Index.php
 php anon make:controller User --group
 php anon make:controller Admin/User --group
 
 # 会生成
-# app/controller/User/Index.php
-# app/controller/Admin/User/Index.php
+# app/Controller/User/Index.php
+# app/Controller/Admin/User/Index.php
 
 # 生成资源控制器模板
 php anon make:controller User --resource
@@ -152,24 +152,24 @@ php anon make:model User
 php anon make:model Admin/User
 
 # 会生成
-# app/model/User.php
-# app/model/Admin/User.php
+# app/Model/User.php
+# app/Model/Admin/User.php
 
 # 生成中间件
 php anon make:middleware AuthMiddleware
 php anon make:middleware Admin/CheckLogin
 
 # 会生成
-# app/middleware/AuthMiddleware.php
-# app/middleware/Admin/CheckLogin.php
+# app/Middleware/AuthMiddleware.php
+# app/Middleware/Admin/CheckLogin.php
 
 # 生成 Server Action
 php anon make:action PublishPost
 php anon make:action Admin/RetryJob
 
 # 会生成
-# app/action/PublishPost.php
-# app/action/Admin/RetryJob.php
+# app/Action/PublishPost.php
+# app/Action/Admin/RetryJob.php
 
 # 生成 FormRequest
 php anon make:request PublishPostRequest
@@ -187,8 +187,10 @@ php anon make:resource PostResource
 php anon make:provider AppServiceProvider
 
 # 会生成
-# app/provider/AppServiceProvider.php
+# app/Provider/AppServiceProvider.php
 ```
+
+推荐统一使用大写目录名，例如 `Controller`、`Model`、`Middleware`、`Action`、`Provider`。Windows 本地通常不会暴露这个问题，但 Linux 线上环境会严格区分大小写，生成器结果也应按最终线上可用状态来理解。
 
 ### Server Actions 列表
 

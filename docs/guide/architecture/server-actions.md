@@ -54,7 +54,7 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "code": "OK",
+  "code": 200,
   "message": "OK",
   "data": {
     "published": true,
@@ -382,7 +382,7 @@ Action::post('posts.publish', PublishPost::class)
 
 Server Actions 会跟路由一起进入缓存。执行 `route:cache` 后，显式注册过的 Action 不会丢。
 
-需要注意的是：Action 注册仍然要写在应用会加载的路由文件里，比如骨架项目的 `app/route/main.php`。
+需要注意的是：Action 注册仍然要写在应用会加载的路由文件里，比如骨架项目的 `app/Route/Main.php`。
 
 ## 当前边界
 

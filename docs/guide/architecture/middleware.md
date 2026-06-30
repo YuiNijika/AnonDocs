@@ -15,7 +15,7 @@
 下面这个例子会检查请求里有没有 `token`。没有就直接返回错误；有就继续往后走。
 
 ```php
-namespace App\Middleware;
+namespace Anon\Middleware;
 
 use Anon\Core\Http\Request;
 use Anon\Core\Http\Response;
@@ -40,7 +40,7 @@ class AuthMiddleware
 你也可以先让请求继续执行，拿到响应后再补充一些东西，比如响应头。
 
 ```php
-namespace App\Middleware;
+namespace Anon\Middleware;
 
 use Anon\Core\Http\Request;
 use Anon\Core\Http\Response;
@@ -63,7 +63,7 @@ class HeaderMiddleware
 最常见的用法是直接挂在路由上。
 
 ```php
-use App\Middleware\AuthMiddleware;
+use Anon\Middleware\AuthMiddleware;
 
 Route::get('/user/profile', function () {
     return 'Profile Page';
@@ -87,7 +87,7 @@ Route::get('/admin/reports', [ReportController::class, 'index'])
 如果一组接口都需要同样的中间件，就放到路由组上。
 
 ```php
-use App\Middleware\AuthMiddleware;
+use Anon\Middleware\AuthMiddleware;
 
 Route::group(['prefix' => '/admin', 'middleware' => AuthMiddleware::class], function ($route) {
     $route->get('/dashboard', function () {
@@ -191,12 +191,14 @@ Route::get('/reports', [ReportController::class, 'index'])
 如果你的中间件经常被使用，可以给它起个短名字。
 
 ```php
-Route::aliasMiddleware('admin', App\Middleware\AdminOnly::class);
+Route::aliasMiddleware('admin', Anon\Middleware\AdminOnly::class);
 
 Route::aliasMiddlewares([
-    'signed' => App\Middleware\ValidateSignature::class,
+    'signed' => Anon\Middleware\ValidateSignature::class,
 ]);
 ```
+
+如果你的骨架目录已经统一成 `app/Middleware`，命名空间也应同步用 `Anon\Middleware` 这类与 PSR-4 目录一致的写法。Windows 本地可能不会报错，但 Linux 线上会严格区分路径大小写。
 
 之后路由里就可以这样写：
 

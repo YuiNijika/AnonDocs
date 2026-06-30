@@ -7,16 +7,18 @@ Anon Framework Next 提供了对 PHP 原生 Session 的封装，同时支持 `fi
 推荐在 `anon.config.php` 中只保留 Session 自身行为配置；如果使用 Redis 驱动，连接信息可以继续放在 `cache.redis` 或 `.env*` 中：
 
 ```php
+use Anon\Core\Facade\Env;
+
 return [
     'session' => [
-        'driver' => getenv('SESSION_DRIVER') ?: 'file',
+        'driver' => Env::get('SESSION_DRIVER', 'file'),
         'lifetime' => 86400,
         'path' => '/',
-        'domain' => getenv('SESSION_DOMAIN') ?: '',
+        'domain' => Env::get('SESSION_DOMAIN', ''),
         'secure' => false,
         'httponly' => true,
         'samesite' => 'Lax',
-        'prefix' => getenv('SESSION_PREFIX') ?: 'anon:session:',
+        'prefix' => Env::get('SESSION_PREFIX', 'anon:session:'),
         'path_storage' => __DIR__ . '/runtime/session',
     ],
 ];

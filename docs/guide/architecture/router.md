@@ -2,7 +2,9 @@
 
 Anon Framework Next 提供路由系统，支持基础路由、任意请求路由、路由组嵌套以及中间件绑定。
 
-所有应用路由默认定义在 `app/route/main.php` 或 `app/route/` 目录下的其他 `.php` 文件中。框架启动时会自动加载该目录下的所有路由配置。
+所有应用路由默认定义在 `app/Route/Main.php` 或 `app/Route/` 目录下的其他 `.php` 文件中。框架启动时会自动加载该目录下的所有路由配置。
+
+在 Linux 环境下，目录大小写必须与命名空间和框架约定保持一致。推荐统一使用大写目录名，例如 `Controller`、`Service`、`Route`、`Action`，避免 Windows 本地正常而线上找不到类。
 
 ---
 
@@ -12,8 +14,8 @@ Anon Framework Next 提供路由系统，支持基础路由、任意请求路由
 
 通常你只需要改两个文件：
 
-- `app/route/main.php`
-- `app/controller/YourController.php`
+- `app/Route/Main.php`
+- `app/Controller/YourController.php`
 
 下面是一套最小开发示例。
 
@@ -24,7 +26,7 @@ Anon Framework Next 提供路由系统，支持基础路由、任意请求路由
 - 单文件控制器：`php anon make:controller User`
 - 目录式控制器：`php anon make:controller Admin/User --group`
 
-例如新建 `app/controller/Admin/User/Index.php`：
+例如新建 `app/Controller/Admin/User/Index.php`：
 
 ```php
 <?php
@@ -56,7 +58,7 @@ class Index
 
 ### 2. 在路由文件中注册控制器
 
-在 `app/route/main.php` 中注册：
+在 `app/Route/Main.php` 中注册：
 
 ```php
 <?php
@@ -484,7 +486,7 @@ php anon route:cache
 php anon route:clear
 ```
 
-应用启动时若存在路由缓存，会优先直接装载缓存内容，而不是重新遍历 `app/route/*.php`。
+应用启动时若存在路由缓存，会优先直接装载缓存内容，而不是重新遍历 `app/Route/*.php`。
 
 当前路由缓存采用安全模式：
 
@@ -494,7 +496,7 @@ php anon route:clear
 
 当你修改以下内容后，应重新执行 `php anon route:cache`：
 
-- `app/route/*.php`
+- `app/Route/*.php`
 - 控制器类名或方法名
 - 路由中间件字符串定义
 

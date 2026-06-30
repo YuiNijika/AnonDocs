@@ -39,6 +39,8 @@ export default defineConfig({
         text: '开发指南',
         items: [
           { text: '快速开始', link: '/guide/what-is-anon' },
+          { text: '当前约定', link: '/guide/architecture/current-conventions' },
+          { text: '部署检查', link: '/guide/architecture/deployment-checklist' },
           { text: '核心架构', link: '/guide/architecture/request-response' },
           { text: '代码规范', link: '/guide/coding-standards' }
         ]
@@ -54,6 +56,8 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '介绍', link: '/what-is-anon' },
+            { text: '当前约定总览', link: '/architecture/current-conventions' },
+            { text: '部署检查清单', link: '/architecture/deployment-checklist' },
             { text: 'API 参考', link: '/architecture/api-reference' },
             { text: '开发规范', link: '/coding-standards' }
           ]

@@ -65,7 +65,7 @@ Widget::register('user_menu', UserMenuWidget::class);
 在任何控制器或业务代码中，你可以通过 `Widget::call` 快速执行并获取 Widget 的返回值。
 
 ```php
-namespace App\Controller;
+namespace Anon\Controller;
 
 use Anon\Core\Http\Response;
 use Anon\Core\Support\Widget;

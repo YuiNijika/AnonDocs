@@ -61,9 +61,9 @@ class StoreUserRequest extends FormRequest
 - 如果数据验证失败，将抛出 `422 Unprocessable Entity`。
 
 ```php
-namespace App\Controller;
+namespace Anon\Controller;
 
-use App\Http\Requests\StoreUserRequest;
+use Anon\Http\Requests\StoreUserRequest;
 use Anon\Core\Http\Response;
 
 class UserController

@@ -14,6 +14,7 @@ Anon Framework Next 引入了极简的 Vite 风格配置体系，支持通过项
 <?php
 
 use Anon\Core\Support\Config;
+use Anon\Core\Facade\Env;
 
 /**
  * Anon Framework Next 核心配置文件
@@ -100,7 +101,9 @@ $dbName = Config::get('database.database');
 
 ## 完整配置项参考 (Full Reference)
 
-虽然你不需要把这些都写进 `anon.config.php`，但当你需要覆盖默认行为时，可以参考以下框架内部的完整默认配置结构：
+虽然你不需要把这些都写进 `anon.config.php`，但当你需要覆盖默认行为时，可以参考以下框架内部的完整默认配置结构。
+
+当前更推荐在配置文件里通过 `Env::get()` 读取环境值，而不是在业务代码里到处直接写 `getenv()`。这样可以同时兼容 `putenv()` 被禁用、以及 `$_ENV` / `$_SERVER` 降级读取的场景：
 
 ```php
 <?php
@@ -113,38 +116,38 @@ return Config::define([
     // 1. 基础应用配置
     // ----------------------------------------------------------------------
     'app' => [
-        'name'  => getenv('APP_NAME') ?: 'Anon Framework Next',
-        'env'   => getenv('APP_ENV') ?: 'production',
-        'debug' => getenv('APP_DEBUG') ?: false,
-        'url'   => getenv('APP_URL') ?: 'http://localhost',
+        'name'  => Env::get('APP_NAME', 'Anon Framework Next'),
+        'env'   => Env::get('APP_ENV', 'production'),
+        'debug' => (bool) Env::get('APP_DEBUG', false),
+        'url'   => Env::get('APP_URL', 'http://localhost'),
     ],
 
     // ----------------------------------------------------------------------
     // 2. 数据库配置
     // ----------------------------------------------------------------------
     'database' => [
-        'type'     => getenv('DATABASE_TYPE') ?: 'mysql',
-        'host'     => getenv('DATABASE_URL') ?: '127.0.0.1',
-        'port'     => (int) (getenv('DATABASE_PORT') ?: 3306),
-        'database' => getenv('DATABASE_NAME') ?: 'anon',
-        'username' => getenv('DATABASE_USER') ?: 'root',
-        'password' => getenv('DATABASE_PASSWORD') ?: '',
-        'charset'  => getenv('DATABASE_CHARSET') ?: 'utf8mb4',
-        'prefix'   => getenv('DATABASE_PREFIX') ?: '',
+        'type'     => Env::get('DATABASE_TYPE', 'mysql'),
+        'host'     => Env::get('DATABASE_URL', '127.0.0.1'),
+        'port'     => (int) Env::get('DATABASE_PORT', 3306),
+        'database' => Env::get('DATABASE_NAME', 'anon'),
+        'username' => Env::get('DATABASE_USER', 'root'),
+        'password' => Env::get('DATABASE_PASSWORD', ''),
+        'charset'  => Env::get('DATABASE_CHARSET', 'utf8mb4'),
+        'prefix'   => Env::get('DATABASE_PREFIX', ''),
     ],
 
     // ----------------------------------------------------------------------
     // 3. 缓存配置
     // ----------------------------------------------------------------------
     'cache' => [
-        'default' => getenv('CACHE_DRIVER') ?: 'file', // 可选: file, redis
+        'default' => Env::get('CACHE_DRIVER', 'file'), // 可选: file, redis
         'path'    => BASE_PATH . '/runtime/cache',
         'prefix'  => 'anon:cache:',
         'redis'   => [
-            'host'     => getenv('REDIS_HOST') ?: '127.0.0.1',
-            'port'     => (int) (getenv('REDIS_PORT') ?: 6379),
-            'password' => getenv('REDIS_PASSWORD') ?: '',
-            'database' => (int) (getenv('REDIS_DB') ?: 0),
+            'host'     => Env::get('REDIS_HOST', '127.0.0.1'),
+            'port'     => (int) Env::get('REDIS_PORT', 6379),
+            'password' => Env::get('REDIS_PASSWORD', ''),
+            'database' => (int) Env::get('REDIS_DB', 0),
         ],
     ],
 
@@ -152,11 +155,11 @@ return Config::define([
     // 4. Session 会话配置
     // ----------------------------------------------------------------------
     'session' => [
-        'driver'       => getenv('SESSION_DRIVER') ?: 'file',
-        'lifetime'     => (int) (getenv('SESSION_LIFETIME') ?: 86400),
+        'driver'       => Env::get('SESSION_DRIVER', 'file'),
+        'lifetime'     => (int) Env::get('SESSION_LIFETIME', 86400),
         'path'         => '/',
-        'domain'       => getenv('SESSION_DOMAIN') ?: '',
-        'secure'       => (bool) getenv('SESSION_SECURE'),
+        'domain'       => Env::get('SESSION_DOMAIN', ''),
+        'secure'       => (bool) Env::get('SESSION_SECURE', false),
         'httponly'     => true,
         'samesite'     => 'Lax',
         'prefix'       => 'anon:session:',
@@ -230,7 +233,7 @@ php anon config:cache
 php anon config:clear
 ```
 
-当配置被缓存后，系统将直接从 `runtime/cache/config.php` 加载静态数组，此时 `.env` 环境变量文件将不再被解析，所有的环境依赖（`getenv()`）都已经被固定为缓存时的值。
+当配置被缓存后，系统将直接从 `runtime/cache/config.php` 加载静态数组，此时 `.env` 环境变量文件将不再被重新解析，所有通过 `Env::get()` 或环境读取链得到的值都会被固定为缓存生成时的结果。
 
 **注意：** 如果你在修改了 `.env` 或者 `anon.config.php` 之后发现配置没有生效，请确保先运行 `php anon config:clear`。
 

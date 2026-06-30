@@ -4,19 +4,21 @@ Anon Framework Next 内置了基于 PDO 的数据库查询构建器和 ActiveRec
 
 ## 配置
 
-你可以在项目根目录下通过 `anon.config.php` 配置数据库连接，并使用 `.env*` 保存账号密码等敏感值：
+你可以在项目根目录下通过 `anon.config.php` 配置数据库连接，并使用 `.env*` 保存账号密码等敏感值。配置文件示例更推荐使用 `Env::get()`，这样能兼容更完整的环境变量读取链：
 
 ```php
+use Anon\Core\Facade\Env;
+
 return [
     'database' => [
-        'type' => getenv('DATABASE_TYPE') ?: 'mysql',
-        'host' => getenv('DATABASE_URL') ?: '127.0.0.1',
-        'port' => (int) (getenv('DATABASE_PORT') ?: 3306),
-        'database' => getenv('DATABASE_NAME') ?: 'anon_test',
-        'username' => getenv('DATABASE_USER') ?: 'root',
-        'password' => getenv('DATABASE_PASSWORD') ?: '',
-        'charset' => getenv('DATABASE_CHARSET') ?: 'utf8mb4',
-        'prefix' => getenv('DATABASE_PREFIX') ?: '',
+        'type' => Env::get('DATABASE_TYPE', 'mysql'),
+        'host' => Env::get('DATABASE_URL', '127.0.0.1'),
+        'port' => (int) Env::get('DATABASE_PORT', 3306),
+        'database' => Env::get('DATABASE_NAME', 'anon_test'),
+        'username' => Env::get('DATABASE_USER', 'root'),
+        'password' => Env::get('DATABASE_PASSWORD', ''),
+        'charset' => Env::get('DATABASE_CHARSET', 'utf8mb4'),
+        'prefix' => Env::get('DATABASE_PREFIX', ''),
     ],
 ];
 ```
@@ -283,7 +285,7 @@ class User extends Model
 }
 ```
 
-> **注意：** 框架启动时需要在合适的生命周期（如服务提供者或全局 Hook `app_init` 中）主动调用一次模型的 `boot` 方法以注册闭包。或者你可以在 `App\Model\BaseModel` 的构造函数里做静态检测。
+> **注意：** 框架启动时需要在合适的生命周期（如服务提供者或全局 Hook `app_init` 中）主动调用一次模型的 `boot` 方法以注册闭包。或者你也可以在项目自己的模型基类里，例如 `Anon\Model\BaseModel` 的构造函数中做静态检测。
 
 ## 关系模型
 

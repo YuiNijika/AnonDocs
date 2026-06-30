@@ -216,7 +216,7 @@ Route::get('/user/profile', function () {
 ```json
 {
   "success": true,
-  "code": "OK",
+  "code": 200,
   "message": "OK",
   "data": {
     "id": 100,
@@ -230,6 +230,8 @@ Route::get('/user/profile', function () {
 ```php
 return Response::success($user, 'Created', 201, 'USER_CREATED');
 ```
+
+这里的 `code` 推荐始终保持为数字型 HTTP 状态码；像 `USER_CREATED` 这类业务语义应放到 `business_code` 或错误时的 `error_code` 中，而不是覆盖 `code` 字段本身。
 
 #### 失败响应
 ```php

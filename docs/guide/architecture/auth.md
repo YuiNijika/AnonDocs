@@ -482,10 +482,12 @@ public function authRevokeSession(Request $request): Response
 ### 1. 配置独立密钥
 在 `.env*` 中定义多个 Secret：
 ```env
-JWT_SECRET=default_secret_key
-JWT_ADMIN_SECRET=admin_super_secret_key
-JWT_API_SECRET=api_third_party_secret_key
+JWT_SECRET=change_this_to_a_random_secret
+JWT_ADMIN_SECRET=change_this_to_a_random_admin_secret
+JWT_API_SECRET=change_this_to_a_random_api_secret
 ```
+
+这些 Secret 只应存在于 `.env*` 或部署平台环境变量中，不应写回 `anon.config.php`，也不应在仓库里保留可直接使用的默认密钥。
 
 ### 2. 签发专属 Token
 ```php

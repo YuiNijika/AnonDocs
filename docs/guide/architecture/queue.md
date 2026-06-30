@@ -9,10 +9,12 @@
 队列功能依赖于 `Redis`。推荐在 `anon.config.php` 中只声明队列自身配置，Redis 连接则复用 `cache.redis` 或继续放在 `.env*` 中：
 
 ```php
+use Anon\Core\Facade\Env;
+
 return [
     'queue' => [
         'default' => 'default',
-        'prefix' => getenv('QUEUE_PREFIX') ?: 'anon:queue:',
+        'prefix' => Env::get('QUEUE_PREFIX', 'anon:queue:'),
         'max_tries' => 3,
     ],
 ];
@@ -83,11 +85,11 @@ class SendWelcomeEmail implements Job
 在你的控制器或业务逻辑中，通过 `Queue` 门面将任务对象推送至后台。
 
 ```php
-namespace App\Controller;
+namespace Anon\Controller;
 
 use Anon\Core\Http\Response;
 use Anon\Core\Facade\Queue;
-use App\Jobs\SendWelcomeEmail;
+use Anon\Jobs\SendWelcomeEmail;
 
 class AuthController
 {
