@@ -253,8 +253,9 @@ Route::post('/user/pay', function (Request $request) {
 ```json
 {
   "success": false,
-  "code": "BAD_REQUEST",
+  "code": 400,
   "message": "金额不能为负数",
+  "error_code": "BAD_REQUEST",
   "errors": {
     "amount": ["金额不能为负数"]
   }

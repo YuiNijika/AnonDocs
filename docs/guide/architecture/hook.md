@@ -89,12 +89,12 @@ Hook::add('request_begin', function ($request) {
 
 ## 注册钩子行为的推荐位置
 
-为了方便管理，框架在项目骨架中提供了一个专门的配置文件：`app/hook.php`。
+为了方便管理，框架在项目骨架中提供了一个专门的配置文件：`app/Hook.php`。
 
 应用在启动时会自动加载这个文件，你可以将所有的系统钩子注册逻辑统一写在这里：
 
 ```php
-// app/hook.php 示例
+// app/Hook.php 示例
 
 use Anon\Core\Facade\Hook;
 use Anon\Core\Http\Response;

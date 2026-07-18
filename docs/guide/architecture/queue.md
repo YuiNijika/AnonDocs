@@ -47,14 +47,14 @@ QUEUE_PREFIX=anon:queue:
 php anon make:job SendWelcomeEmail
 ```
 
-这会在 `app/jobs/SendWelcomeEmail.php` 下生成文件。
+这会在 `app/Job/SendWelcomeEmail.php` 下生成文件。
 
 ### 编写任务逻辑
 
 任务类必须实现 `Anon\Core\Queue\Job` 接口。你可以将需要的数据通过构造函数传入，并在 `handle` 方法中编写实际执行的耗时逻辑。
 
 ```php
-namespace App\Jobs;
+namespace Anon\Job;
 
 use Anon\Core\Queue\Job;
 use Anon\Core\Facade\Log;
@@ -104,7 +104,10 @@ class AuthController
         // 延迟 10 秒执行，并限制最多重试 5 次
         Queue::push(new SendWelcomeEmail($user), 'emails', 10, 5);
 
-        return Response::json(['msg' => 'Registration successful!']);
+        return Response::success([
+            'queued' => true,
+            'email' => $user['email'],
+        ], 'Registration successful!', 202);
     }
 }
 ```

@@ -60,7 +60,7 @@ Event::listen('user.login', function ($user) {
 除了基于字符串的事件，你还可以直接分发一个事件对象，系统会自动将其类名作为事件名：
 
 ```php
-namespace App\Events;
+namespace Anon\Event;
 
 class UserRegistered
 {

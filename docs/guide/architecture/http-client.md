@@ -45,8 +45,52 @@ use Anon\Core\Facade\Http;
 // PUT 请求
 Http::put('https://api.example.com/users/1', ['name' => 'New Name']);
 
+### PATCH 请求
+
+使用 `Http::patch` 方法发起 PATCH 请求，用于部分更新资源。用法与 POST/PUT 一致，传入数组数据会自动转为 JSON。
+
+```php
+use Anon\Core\Facade\Http;
+
+// PATCH 请求 — 部分更新
+Http::patch('https://api.example.com/users/1', ['bio' => 'updated']);
+
 // DELETE 请求
 Http::delete('https://api.example.com/users/1');
+```
+
+### HEAD 请求
+
+`Http::head` 用于发送纯 HEAD 请求（无 body），主要用来获取远程资源的元信息（如文件大小、Content-Type、ETag 等），不拉取 body 内容。
+
+```php
+use Anon\Core\Facade\Http;
+
+$response = Http::head('https://cdn.example.com/uploads/asset.zip', [
+    'Authorization' => 'Bearer your_token_here',
+]);
+
+if ($response['status'] === 200) {
+    $size = (int) ($response['headers']['Content-Length'] ?? 0);
+    echo "文件大小: {$size} 字节";
+}
+```
+
+**注意：HEAD 请求的返回结构与 GET/POST 略有不同** — `body` 始终为空字符串，`json` 始终为 `null`。因为 HEAD 响应只返回响应头，不含 body。
+
+### OPTIONS 请求
+
+`Http::options` 用于探测服务器支持的 HTTP 方法或 CORS 预检信息，通常不需要传 data。
+
+```php
+use Anon\Core\Facade\Http;
+
+$response = Http::options('https://api.example.com/users', [
+    'Origin' => 'https://my-app.local',
+]);
+
+// 检查支持的方法
+$methods = $response['headers']['Allow'] ?? '';
 ```
 
 ---
@@ -101,6 +145,32 @@ $response = Http::post('https://api.example.com/protected', [
 ```
 
 ---
+
+## 超时设置
+
+默认情况下每个请求的超时为 **10 秒**，适用于大多数普通 API。
+
+如果某些请求预期耗时较长（例如上游 AI 推理），可以手动调大超时：
+
+```php
+use Anon\Core\Facade\Http;
+
+// 普通请求 — 默认 10 秒
+$response = Http::get('https://api.example.com/data');
+
+// 长耗时请求 — 120 秒
+$client = new \Anon\Core\Http\Client();
+$client->timeout(120);
+$response = $client->post('https://ai.example.com/chat', [...]);
+```
+
+传 `0` 表示不设超时，`CURLOPT_TIMEOUT` 会被设为 0（curl 认为无限等待）：
+
+```php
+$client->timeout(0); // 不限制超时
+```
+
+传入负值会被自动修正为 0。
 
 ## 文件上传
 

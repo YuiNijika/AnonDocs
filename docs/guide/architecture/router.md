@@ -332,6 +332,14 @@ Route::get('/users/{user}', [UserController::class, 'show']);
 
 当绑定结果为空时，框架会返回统一的 `NOT_FOUND`。如果控制器参数同时带了类型，并且路由绑定结果就是这个类型，框架会优先把绑定结果注入进去。
 
+如果后面要生成 OpenAPI，而你又没有手写 `pathParam()`，生成器还会把这类信息当作兜底线索：
+
+- 控制器参数如果声明成 `int $id`、`string $slug`，会优先按标量类型推导 path schema
+- `Route::model('user', User::class)` 默认按绑定键推导；键是 `id` / `*_id` 时会优先推成 `integer`
+- 键是 `uuid` / `*_uuid` 时会推成 `string + uuid format`
+
+如果你需要更精确的描述、示例值或想覆盖默认推导，仍然建议显式写 `pathParam()`。
+
 
 ---
 
@@ -429,6 +437,113 @@ Route::get('/users/{id}', [UserController::class, 'show'])
 
 这些信息会跟着路由缓存一起保存，不需要每次启动重新计算。
 
+如果你当前项目是标准 REST API，还可以直接在路由上补参数、响应和鉴权声明：
+
+```php
+Route::get('/users/{id}', [UserController::class, 'show'])
+    ->name('users.show')
+    ->summary('获取用户详情')
+    ->tags(['Users'])
+    ->pathParam('id', 'integer', '用户 ID', 1)
+    ->queryParam('include', 'string', false, '附带加载的关联数据', 'roles,permissions')
+    ->security('bearerAuth')
+    ->successResponse([
+        'id' => 'integer|required',
+        'name' => 'string|required',
+        'email' => 'string',
+    ])
+    ->errorResponse(404, '用户不存在', 'USER_NOT_FOUND');
+```
+
+这样做的好处是：
+
+- 路由定义和 OpenAPI 元数据放在一起
+- 不需要每个接口都手写完整 `openapi()` 数组
+- 更贴近 REST API 的路径参数、查询参数、标准成功/失败响应模型
+
+### REST API 常用 helper
+
+除了 `openapi()` 直接透传原始配置以外，路由还支持以下 helper：
+
+| 方法 | 用来做什么 |
+|---|---|
+| `parameter()` | 手动声明任意位置参数 |
+| `queryParam()` | 声明 query 参数 |
+| `pathParam()` | 声明 path 参数 |
+| `headerParam()` | 声明 header 参数 |
+| `cookieParam()` | 声明 cookie 参数 |
+| `response()` | 自定义某个 HTTP 响应 |
+| `successResponse()` | 基于统一 `ApiSuccess` 契约声明成功响应 |
+| `errorResponse()` | 基于统一 `ApiError` 契约声明失败响应 |
+| `resourceResponse()` | 基于 Resource 类声明单资源响应 |
+| `resourceCollectionResponse()` | 基于 Resource 类声明列表或分页列表响应 |
+| `security()` | 声明 OpenAPI 安全方案，例如 `bearerAuth` |
+| `deprecated()` | 标记当前接口是否已废弃 |
+| `responseHeader()` / `responseHeaders()` | 直接声明路由返回时要追加的响应头 |
+| `allowHeaders()` / `exposeHeaders()` | 声明该路由的 CORS 请求头白名单和暴露头 |
+| `allowOrigin()` / `allowMethods()` | 声明该路由允许的来源和方法 |
+| `allowCredentials()` / `maxAge()` | 声明是否允许携带凭证、预检缓存时间 |
+| `cors()` | 一次性批量声明整组路由级 CORS 规则 |
+
+如果 helper 不够表达复杂场景，再继续用 `openapi()` 叠加更细的配置即可。
+
+### 路由级 Header / CORS
+
+如果你希望某几个接口显式控制响应头、预检行为或跨域策略，可以直接在路由注册时声明，而不必再去 `Hook.php` 里做全局兜底。
+
+```php
+Route::get('/admin/profile', [ProfileController::class, 'show'])
+    ->summary('获取后台用户资料')
+    ->responseHeader('X-Route-Scope', 'admin')
+    ->allowOrigin([
+        'https://admin.example.com',
+        'https://ops.example.com',
+    ])
+    ->allowHeaders(['Authorization', 'Content-Type', 'X-Trace-Id'])
+    ->exposeHeaders(['X-Trace-Id'])
+    ->allowMethods(['GET'])
+    ->allowCredentials()
+    ->maxAge(600);
+```
+
+也可以用 `cors()` 一次性批量配置：
+
+```php
+Route::post('/uploads', [UploadController::class, 'store'])
+    ->responseHeaders([
+        'X-Upload-Endpoint' => 'media',
+        'Cache-Control' => 'no-store',
+    ])
+    ->cors([
+        'origin' => ['https://admin.example.com'],
+        'allow_headers' => ['Authorization', 'Content-Type'],
+        'expose_headers' => ['X-Request-Id'],
+        'methods' => ['POST'],
+        'credentials' => true,
+        'max_age' => 300,
+    ]);
+```
+
+如果你想给整组接口统一挂上同一套 Header/CORS 规则，也可以先链式声明，再进入 `group()`：
+
+```php
+Route::allowOrigin(['https://admin.example.com'])
+    ->allowHeaders(['Authorization', 'Content-Type'])
+    ->allowCredentials()
+    ->maxAge(600)
+    ->group('/admin', function () {
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::post('/profile', [ProfileController::class, 'update']);
+    });
+```
+
+这套路由级声明会在运行时自动生效：
+
+- 普通成功响应会追加对应的自定义响应头和 CORS 响应头
+- 该路由抛出异常时，异常响应也会套用同一组路由级 header/CORS 规则
+- 未显式注册 `OPTIONS` 路由时，框架会尝试按目标路由自动返回 `204` 预检响应
+- 路由缓存会一并持久化这些元数据，重新加载后仍然有效
+
 ---
 
 ## OpenAPI 生成
@@ -451,7 +566,64 @@ runtime/openapi.json
 php anon openapi:generate --output=runtime/docs/openapi.json
 ```
 
+如果你只是想先预览内容，不想落盘：
+
+```bash
+php anon openapi:generate --stdout
+```
+
+如果你希望在提交前做一次轻量检查，确认哪些接口还缺少基础文档元信息：
+
+```bash
+php anon openapi:generate --check
+```
+
+如果你要把检查结果直接交给 CI 或脚本处理：
+
+```bash
+php anon openapi:generate --check --json
+```
+
+当前检查会重点提示这些真实项目里最常见的问题：
+
+- 缺少 `summary()`
+- 仍然只有默认 `200` 响应，没有补 `successResponse()` / `errorResponse()` / `resourceResponse()`
+- 路径参数没有显式 `pathParam()`，同时也无法从控制器参数类型或 `Route::model()` 绑定可靠推导
+
+`--check --json` 会输出统一结构：
+
+- `status`
+- `summary`
+- `issue_count`
+- `issues`
+- `routes`
+- `actions`
+
+其中：
+
+- `issues` 保留扁平数组，便于兼容已有脚本
+- `routes` 更适合渲染路由巡检报表
+- `actions` 更适合渲染 Action 巡检报表
+- 分组项里也会带 `source`
+- 分组项里也会带 `status`，当前为 `warning`
+- 分组项里也会带 `issues_detail`
+- `summary` 会给出 routes/actions 各自的命中数量和总 issue 数
+
+如果你要把输出接到其他工具，而不希望有额外缩进，也可以关闭 pretty print：
+
+```bash
+php anon openapi:generate --stdout --no-pretty
+```
+
 目前会生成路径、HTTP 方法、路径参数、`operationId`、`summary`、`description`、`tags` 和基础响应声明。更细的 schema 可以通过 `openapi()` 自己补。
+
+对于常见 REST 资源路由，路径参数现在会优先按下面的顺序推导：
+
+- 你显式写的 `pathParam()`
+- 控制器方法里的标量参数类型
+- `Route::model()` 绑定键，例如 `id`、`uuid`
+
+也就是说，像 `GET /users/{id}` 这类接口，即使没手写 `pathParam('id', 'integer')`，文档通常也能得到更接近真实场景的 schema；但如果接口是 UUID、slug 或带示例值，依然推荐手写声明。
 
 ---
 
@@ -463,7 +635,44 @@ php anon openapi:generate --output=runtime/docs/openapi.json
 php anon route:list
 ```
 
-输出会列出 `Method`、`URI`、`Action` 和 `Middleware`，排查路由没命中、控制器写错、中间件没挂上时很有用。
+现在除了 `Method`、`URI`、`Action`、`Middleware`，也会额外显示 `Name`、`Summary` 和一个很短的 `Docs` 摘要，适合快速确认哪些接口的文档元信息还比较薄。
+
+如果你想交给脚本或 CI 读取：
+
+```bash
+php anon route:list --json
+```
+
+JSON 输出会包含这些字段：
+
+- `method`
+- `uri`
+- `name`
+- `action`
+- `middlewares`
+- `summary`
+- `description`
+- `tags`
+- `security`
+- `deprecated`
+- `response_headers`
+- `cors`
+- `source`
+- `status`
+- `issues`
+- `issues_detail`
+- `issue_count`
+
+其中：
+
+- `issues` 会列出和 `openapi:generate --check` 同一套轻量问题摘要
+- `issues_detail` 会返回结构化问题详情，适合 CI 或报表系统直接消费
+- `issue_count` 适合脚本、CI 或你自己的巡检工具快速判断优先级
+- `source` 当前固定为 `route`
+- `status` 当前只有两种：`ok` 和 `warning`
+- `response_headers` / `cors` 会返回当前路由最终声明出来的响应头和 CORS 元数据
+
+这在做接口巡检、文档校验或自定义工具链时会比纯表格更方便。
 
 ---
 

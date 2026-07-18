@@ -121,7 +121,7 @@ Route::globalMiddleware(Cors::class);
 
 ### CORS
 
-前后端分离项目基本都会用到 CORS。内置 `Cors` 会自动补充跨域响应头；如果请求是 `OPTIONS` 预检，并且没有显式注册对应路由，路由器会直接返回 `204`。
+前后端分离项目基本都会用到 CORS。内置 `Cors` 会自动补充跨域响应头；如果请求是 `OPTIONS` 预检，并且没有显式注册对应路由，`Cors` 中间件会直接返回 `204`。
 
 ```php
 Route::globalMiddleware('cors');

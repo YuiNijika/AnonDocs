@@ -171,6 +171,11 @@ php anon make:action Admin/RetryJob
 # app/Action/PublishPost.php
 # app/Action/Admin/RetryJob.php
 
+# 生成的 Action 默认包含
+# - code()：成功响应里的 business_code
+# - message()：成功响应里的 message
+# - handle()：实际业务处理入口
+
 # 生成 FormRequest
 php anon make:request PublishPostRequest
 
@@ -182,6 +187,10 @@ php anon make:resource PostResource
 
 # 会生成
 # app/Http/Resources/PostResource.php
+
+# 生成的 Resource 默认包含
+# - schema()：用于 OpenAPI / REST 契约
+# - toArray()：用于真实响应格式化
 
 # 生成服务提供者
 php anon make:provider AppServiceProvider
@@ -200,11 +209,37 @@ php anon make:provider AppServiceProvider
 php anon action:list
 ```
 
+现在表格除了 `Name`、`Method`、`Handler`、`Middleware`、`Summary`，还会额外显示 `Docs` 摘要，方便快速看出哪些 Action 还缺少最基础的文档元信息。
+
 如果要给脚本或后续客户端生成器使用，可以输出 JSON：
 
 ```bash
 php anon action:list --json
 ```
+
+JSON 输出除了 Action 基本信息，也会包含：
+
+- `source`
+- `status`
+- `issues`
+- `issues_detail`
+- `issue_count`
+- `docs`
+
+这些字段和 `openapi:generate --check` 走的是同一套轻量检查规则，目前重点关注：
+
+- 是否缺少 `summary()`
+- 是否缺少显式响应元信息
+
+其中 `status` 当前只有两种：
+
+- `ok`
+- `warning`
+
+另外：
+
+- `source` 当前固定为 `action`
+- `issues_detail` 适合直接给 CI、管理后台或自定义报表消费
 
 输出内容来自当前应用真实加载后的 Action 注册表，所以执行前要确保路由文件会被正常加载。
 
