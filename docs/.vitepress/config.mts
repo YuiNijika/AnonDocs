@@ -85,6 +85,7 @@ export default defineConfig({
             { text: '依赖注入容器', link: '/container' },
             { text: '服务提供者', link: '/service-provider' },
             { text: '门面 (Facade)', link: '/facade' },
+            { text: '异常体系 (Exception)', link: '/exception' },
             { text: '事件系统 (Event)', link: '/event' },
             { text: '钩子系统 (Hook)', link: '/hook' },
             { text: '辅助函数 (Support)', link: '/support' },

@@ -57,6 +57,36 @@ Log::debug('SELECT * FROM users', 'sql');
 1. **依赖调试配置**：只有在 `.env*` 中设置 `DEBUG_MODE=true`，或在 `anon.config.php` 中设置 `app.debug=true` 时，`Log::debug()` 才会落盘。
 2. **生产环境静默**：当调试模式关闭时，所有调用 `Log::debug()` 的代码会直接返回，没有额外 I/O 开销。
 
+## 最低写入级别 (`log.level`)
+
+除 `debug` 方法的开关外，`log()` 统一走级别过滤：
+
+| 配置 `log.level` | 行为 |
+| --- | --- |
+| `debug` | 写入全部级别（默认：`app.debug=true` 时） |
+| `info` | 跳过 debug（默认：生产） |
+| `warning` | 仅 warning / error |
+| `error` | 仅 error |
+
+```php
+// anon.config.php
+'log' => [
+    'path' => RUNTIME_PATH . '/log',
+    'level' => 'warning',
+    // 按日目录保留天数；0 表示不自动清理
+    'max_files' => 14,
+],
+```
+
+也可运行时调整：
+
+```php
+Log::setMinLevel('error');
+```
+
+## 日志保留 (`log.max_files`)
+
+日志按 `Y-m-d` 分子目录写入。`flush()` 时会删除早于 `log.max_files` 天的日期目录（默认 14）。设为 `0` 关闭自动清理。
 **动态调整 Debug 状态**
 
 你可以随时通过 `setDebug()` 方法动态更改调试记录状态（适用于某些需要临时开启高频日志的脚本）：
@@ -76,3 +106,5 @@ Log::setDebug($isDebug); // 恢复原有状态
 ## 异常接管
 
 框架底层实现了全局异常处理器 `Anon\Core\Exception\Handler`。当发生 500 及以上级别的致命错误或未捕获异常时，系统会自动拦截并记录到 `exception.log`。
+
+领域异常与 HTTP 异常的分工见 [异常体系](/guide/architecture/exception)。

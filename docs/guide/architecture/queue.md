@@ -16,6 +16,10 @@ return [
         'default' => 'default',
         'prefix' => Env::get('QUEUE_PREFIX', 'anon:queue:'),
         'max_tries' => 3,
+        // 反序列化白名单（class-string 列表）；true / '*' 已废弃并会抛错
+        'allowed_job_classes' => [
+            // \Anon\Job\SendWelcomeEmail::class,
+        ],
     ],
 ];
 ```
@@ -26,6 +30,8 @@ return [
 - `cache.redis`
 - 旧的顶层 `redis`
 - `.env*`
+
+连接逻辑与 Cache / Session 共用 `RedisConnector`，避免重复实现。
 
 兼容模式下，仍可继续通过 `.env` 配置：
 
@@ -180,3 +186,27 @@ php anon queue:clear-failed --queue=emails
 手动重试时，框架会将任务重新放回待消费队列，并重置本轮尝试计数，便于重新执行完整的重试流程。
 
 `queue:clear-failed` 会直接删除当前失败队列中的全部记录，适合在你确认这些失败任务已经不再需要保留时执行。
+
+---
+
+## 安全说明
+
+任务载荷中的 Job 对象经 `serialize` / `unserialize` 往返。`unserialize` **只允许** `Anon\Core\Queue\Job` 以及 `queue.allowed_job_classes` 中的类名。
+
+```php
+'queue' => [
+    'allowed_job_classes' => [
+        \Anon\Job\SendWelcomeEmail::class,
+    ],
+],
+```
+
+### 已废弃且不兼容
+
+| 旧用法 | 运行时行为 |
+| --- | --- |
+| `allowed_job_classes => true` 或 `'*'` | 抛出 `Anon\Core\Exception\Deprecated`（`410` / `METHOD_DEPRECATED`） |
+| `Queue::allowUnsafeJobUnserialize()` | IDE `@deprecated`；调用同样抛出 `Deprecated` |
+| Worker 内裸 `unserialize($payload['job'])` | 请改用 `Queue::resolveJob($payload)` |
+
+相关内部错误仍抛 `Anon\Core\Exception\Queue`。
