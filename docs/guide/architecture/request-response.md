@@ -272,6 +272,23 @@ Route::post('/user/pay', function (Request $request) {
 return Response::json(['status' => 'ok'], 201);
 ```
 
+### 流式响应 (SSE)
+
+服务端推送事件流用 `Response::sse()` + `Sse` 工具类。详见 [Server-Sent Events](./sse)。
+
+```php
+use Anon\Core\Http\Response;
+use Anon\Core\Http\Sse;
+
+return Response::sse(function (): void {
+    Sse::kickoff();
+    Sse::event(['hello' => 'world'], event: 'message');
+    Sse::done();
+});
+```
+
+双向实时通信见 [WebSocket](./websocket)（独立进程 `php anon ws`）。
+
 ### 自定义 HTTP 状态码与头信息
 
 链式调用方法设置状态码和头信息：

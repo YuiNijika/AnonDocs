@@ -20,6 +20,7 @@
 | `HttpClient` | 出站 HTTP 客户端 |
 | `Storage` | 磁盘驱动与上传文件移动 |
 | `Widget` | 小部件注册与渲染 |
+| `WebSocket` | WebSocket 绑定失败等运行时错误 |
 | `Deprecated` | 已废弃且不兼容的 API/配置（HTTP 410，`METHOD_DEPRECATED`） |
 | `Handler` | 全局异常渲染（不是可抛异常） |
 

@@ -207,7 +207,16 @@ return Response::error('参数错误', 400);
 
 // 返回原生 JSON 与自定义状态码
 return Response::json(['status' => 'ok'], 201);
+
+// SSE 流式响应（详见 SSE 专章）
+return Response::sse(function (): void {
+    \Anon\Core\Http\Sse::kickoff();
+    \Anon\Core\Http\Sse::data(['hello' => 'world']);
+    \Anon\Core\Http\Sse::done();
+});
 ```
+
+流式推送见 [Server-Sent Events](./sse)；双向实时见 [WebSocket](./websocket)（`php anon ws`）。
 
 ---
 

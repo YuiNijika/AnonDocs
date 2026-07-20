@@ -251,6 +251,24 @@ php anon config:clear
 - `queue`
 - `log`
 - `server`
+- `websocket`（`php anon ws` 读取 host/port/心跳/连接上限等）
+- `http`（如出站客户端 `ssl_verify`）
+
+WebSocket 示例：
+
+```php
+return Config::define([
+    'websocket' => [
+        'host' => '0.0.0.0',
+        'port' => 8081,
+        'heartbeat' => 30,
+        'max_connections' => 1024,
+        // 'allowed_origins' => ['https://app.example.com'],
+    ],
+]);
+```
+
+详见 [WebSocket](./websocket) 与 [SSE](./sse)。
 
 ## 迁移建议
 

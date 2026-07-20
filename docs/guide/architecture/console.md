@@ -63,6 +63,32 @@ php anon run
 php anon run --host=0.0.0.0 --port=8080
 ```
 
+### ws (WebSocket)
+启动内置 WebSocket 服务（RFC6455）。**独立进程**，不走 `php -S` / PHP-FPM 的 HTTP 路由。
+
+```bash
+php anon ws
+php anon ws --host=0.0.0.0 --port=8081
+```
+
+默认监听 `0.0.0.0:8081`（可用 `anon.config.php` 的 `websocket.*` 覆盖：host/port/heartbeat/max_connections 等）。
+
+项目根目录可放置 `websocket.php` 注册路由：
+
+```php
+<?php
+use Anon\Core\WebSocket\Connection;
+use Anon\Core\WebSocket\Server;
+
+return function (Server $server): void {
+    $server->route('/echo', [
+        'message' => fn (Connection $c, string $msg) => $c->send($msg),
+    ]);
+};
+```
+
+若无该文件，会自动注册演示路由 `/echo`。完整说明见文档 [WebSocket](./websocket)。
+
 ### version
 你可以通过该命令快速查看当前 Anon Framework Next 的框架版本号，它会动态调用 `\Anon\Core\Facade\App::version()` 获取实际版本。
 

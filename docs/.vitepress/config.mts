@@ -74,7 +74,9 @@ export default defineConfig({
             { text: 'API 资源层 (Resources)', link: '/api-resource' },
             { text: 'OpenAPI 生成', link: '/openapi' },
             { text: '中间件 (Middleware)', link: '/middleware' },
-            { text: 'HTTP 客户端', link: '/http-client' }
+            { text: 'HTTP 客户端', link: '/http-client' },
+            { text: 'Server-Sent Events (SSE)', link: '/sse' },
+            { text: 'WebSocket', link: '/websocket' }
           ]
         },
         {

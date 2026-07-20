@@ -263,7 +263,25 @@ $apiKey = getenv('THIRD_PARTY_API_KEY');
 
 ---
 
-## 9. 本地正常线上异常的默认排查顺序
+## 9. SSE / WebSocket 线上检查
+
+### SSE（走 HTTP）
+
+- 路由是否 `Response::sse()`，长连接是否 `set_time_limit(0)`
+- Nginx 是否 `proxy_buffering off`（或依赖 `X-Accel-Buffering: no`）
+- Cloudflare 等边缘：首包是否够快（`Sse::kickoff`）、空闲是否有 `ping`
+- 推送循环是否检查 `Sse::connected()`，避免客户端断开后空转
+
+### WebSocket（独立进程）
+
+- 是否另起 `php anon ws`（或 systemd 托管），**不是** `php anon dev` 自带
+- `websocket.php` 是否在项目根且已部署
+- 反代是否带 `Upgrade` / `Connection` 头
+- `websocket.allowed_origins` / 心跳 / 连接上限是否按生产配置
+
+---
+
+## 10. 本地正常线上异常的默认排查顺序
 
 强烈建议按这个顺序排：
 
@@ -274,12 +292,13 @@ $apiKey = getenv('THIRD_PARTY_API_KEY');
 5. `Env::get()` / 环境变量读取链
 6. `php-fpm` / opcache
 7. 当前实际运行的是不是 vendor 副本
+8. SSE/WebSocket：进程是否在跑、反代与缓冲配置
 
 这是目前最省时间的一套默认顺序。
 
 ---
 
-## 10. 发布交付时建议附带的提醒
+## 11. 发布交付时建议附带的提醒
 
 如果你在给别人交付 Anon 项目修改，建议把这些也一起说清楚：
 
@@ -290,6 +309,7 @@ $apiKey = getenv('THIRD_PARTY_API_KEY');
 - 是否需要重启 `php-fpm`
 - 是否涉及 Linux 目录大小写
 - 是否改的是 `framework/core` 还是实际运行中的 `vendor/anon-core`
+- 是否需要启动/重启 `php anon ws`
 
 ---
 
@@ -298,6 +318,8 @@ $apiKey = getenv('THIRD_PARTY_API_KEY');
 - [当前约定总览](./current-conventions.md)
 - [路由系统](./router.md)
 - [请求与响应](./request-response.md)
+- [Server-Sent Events](./sse.md)
+- [WebSocket](./websocket.md)
 - [项目配置](./configuration.md)
 - [环境变量](./env.md)
 - [身份认证](./auth.md)

@@ -311,7 +311,8 @@ php anon route:cache
 - `JWT_SECRET` 只走 `.env*`
 - 生成器产物目录的大小写
 - Provider / Middleware / Resource 示例命名空间
-- 异常类位于 `Anon\Core\Exception`，**类名不带 Exception 后缀**（如 `Http`、`Auth`、`Database`）
+- 异常类位于 `Anon\Core\Exception`，**类名不带 Exception 后缀**（如 `Http`、`Auth`、`Database`、`WebSocket`）
+- 单向推流用 `Response::sse()` + `Sse`；双向实时用独立进程 `php anon ws`（见 [SSE](./sse) / [WebSocket](./websocket)）
 
 ---
 
@@ -331,6 +332,8 @@ php anon route:cache
 ## 相关文档
 
 - [异常体系](./exception.md)
+- [Server-Sent Events](./sse.md)
+- [WebSocket](./websocket.md)
 - [部署检查清单](./deployment-checklist.md)
 - [路由系统](./router.md)
 - [请求与响应](./request-response.md)
